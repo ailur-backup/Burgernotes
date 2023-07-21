@@ -32,6 +32,7 @@ body {
 .topBar .usernameBox {
     text-align: right;
     position: absolute;
+    cursor: pointer;
     right: 12px;
 }
 
@@ -60,6 +61,7 @@ body {
     margin: 7px;
     margin-bottom: 0;
     background-color: #ffffff;
+    color: black;
     border: none;
     border-radius: 8px;
 
@@ -73,7 +75,7 @@ body {
 }
 
 .notesBar .selected {
-    background-color: #157efb;
+    background-color: #157efb !important;
     color: white
 }
 
@@ -96,6 +98,7 @@ body {
     right: 0;
     bottom: 0;
     border: none;
+    font-size: 16px;
     width: calc(100% - 180px - 7px);
     height: calc(100% - 50px - 6px);
     font-family: "Inter", sans-serif;

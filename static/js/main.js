@@ -23,6 +23,8 @@ let waitTime = 400
 if (/Android|iPhone/i.test(navigator.userAgent)) {
     noteBox.style.width = "10px";
     notesBar.style.width = "calc(100% - 10px)"
+    noteBox.readOnly = true
+    noteBox.style.fontSize = "18px"
 
     notesBar.addEventListener("touchstart", function (event) {
         touchstartX = event.changedTouches[0].screenX;
@@ -50,6 +52,7 @@ if (/Android|iPhone/i.test(navigator.userAgent)) {
         if (touchendX > touchstartX) {
             notesBar.style.width = "calc(100% - 30px)";
             noteBox.style.width = "30px"
+            noteBox.readOnly = true
             notesDiv.classList.remove("hidden")
             newNote.classList.remove("hidden")
         }
@@ -57,6 +60,7 @@ if (/Android|iPhone/i.test(navigator.userAgent)) {
         if (touchendX < touchstartX) {
             noteBox.style.width = "calc(100% - 30px)";
             notesBar.style.width = "30px"
+            noteBox.readOnly = false
             notesDiv.classList.add("hidden")
             newNote.classList.add("hidden")
         }
