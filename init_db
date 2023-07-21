@@ -1,0 +1,29 @@
+#!/usr/bin/python3
+import sqlite3
+import os
+
+def generatedb():
+    connection = sqlite3.connect("database.db")
+
+    with open("schema.sql") as f:
+        connection.executescript(f.read())
+
+    cur = connection.cursor()
+
+    connection.commit()
+    connection.close()
+
+    print("[INFO] Generated database")
+
+if not os.path.exists("database.db"):
+    generatedb()
+else:
+    answer = input("Proceeding will overwrite the database. Proceed? (y/N)")
+    if "y" in answer.lower():
+        generatedb()
+    elif "n" in answer.lower():
+        print("Stopped")
+    elif ":3" in answer:
+        print(":3")
+    else:
+        print("Stopped")
