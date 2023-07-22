@@ -104,6 +104,43 @@ body {
     font-family: "Inter", sans-serif;
 }
 
+.optionsCoverDiv {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    background-color: rgba(0, 0, 0, 0.7);
+    ;
+}
+
+.optionsDiv {
+    position: fixed;
+    left: 12.5%;
+    top: 12.5%;
+    width: 75%;
+    height: 75%;
+    background-color: white;
+    padding: 10px;
+    color: black;
+    border-radius: 8px;
+}
+
+.optionsDiv button {
+    padding: 10px;
+    padding-left: 15px;
+    padding-right: 15px;
+    color: white;
+    border: none;
+    text-decoration: none;
+    background-color: #157efb;
+    border-radius: 8px;
+}
+
+.optionsDiv .exit {
+    background-color: #e9e9e9;
+    color: black;
+}
+
 /* Sign up/log in div */
 
 .inoutdiv {
@@ -148,6 +185,7 @@ body {
 .mainDiv {
     text-align: center;
 }
+
 .mainDiv a {
     padding: 10px;
     padding-left: 15px;
@@ -157,6 +195,7 @@ body {
     background-color: #157efb;
     border-radius: 8px;
 }
+
 .mainDiv .feature {
     width: 80%;
     margin-left: 10%;
@@ -165,12 +204,15 @@ body {
     border-radius: 8px;
     font-size: 17px;
 }
+
 .mainDiv .green {
     background-color: #ebffeb;
 }
+
 .mainDiv .yellow {
     background-color: #ffffeb;
 }
+
 .mainDiv img {
     margin: 10px;
     box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);

@@ -1,0 +1,31 @@
+#!/usr/bin/python3
+import sqlite3
+import sys
+
+print("type n to cancel")
+answer = input("delete user, what is user id?")
+
+if (answer == "n"):
+    sys.exit()
+
+def get_db_connection():
+    conn = sqlite3.connect("database.db")
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+print("deleting notes")
+
+conn = get_db_connection()
+notes = conn.execute("DELETE FROM notes WHERE creator = ?", (int(answer),))
+conn.commit()
+conn.close()
+
+print("deleting account")
+
+conn = get_db_connection()
+conn.execute("DELETE FROM users WHERE id = ?", (int(answer),))
+conn.commit()
+conn.close()
+
+print("success")

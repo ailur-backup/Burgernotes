@@ -30,6 +30,15 @@ signupButton.addEventListener("click", (event) => {
         let username = usernameBox.value
         let password = passwordBox.value
 
+        if (username == "") {
+            statusBox.innerText = "username required"
+            return
+        }
+        if (password == "") {
+            statusBox.innerText = "password required"
+            return
+        }
+
         showElements(false)
         statusBox.innerText = "welcome back!"
 

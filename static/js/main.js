@@ -7,10 +7,17 @@ if (localStorage.getItem("DONOTSHARE-password") === null) {
     throw new Error();
 }
 
+function formatBytes(a, b = 2) { if (!+a) return "0 Bytes"; const c = 0 > b ? 0 : b, d = Math.floor(Math.log(a) / Math.log(1024)); return `${parseFloat((a / Math.pow(1024, d)).toFixed(c))} ${["Bytes", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"][d]}` }
+
 let secretkey = localStorage.getItem("DONOTSHARE-secretkey")
 let password = localStorage.getItem("DONOTSHARE-password")
 
 let usernameBox = document.getElementById("usernameBox")
+let optionsCoverDiv = document.getElementById("optionsCoverDiv")
+let exitThing = document.getElementById("exitThing")
+let storageThing = document.getElementById("storageThing")
+let usernameThing = document.getElementById("usernameThing")
+let logOutButton = document.getElementById("logOutButton")
 let notesBar = document.getElementById("notesBar")
 let notesDiv = document.getElementById("notesDiv")
 let newNote = document.getElementById("newNote")
@@ -85,7 +92,15 @@ fetch("/api/userinfo", {
             let responseData = await response.json()
             usernameBox.innerText = responseData["username"]
             usernameBox.addEventListener("click", (event) => {
+                optionsCoverDiv.classList.remove("hidden")
+                usernameThing.innerText = "logged in as " + responseData["username"]
+                storageThing.innerText = "you've used " + formatBytes(responseData["storageused"]) + " out of " + formatBytes(responseData["storagemax"])
+            });
+            logOutButton.addEventListener("click", (event) => {
                 window.location.href = "/api/logout"
+            });
+            exitThing.addEventListener("click", (event) => {
+                optionsCoverDiv.classList.add("hidden")
             });
         }
         doStuff()
@@ -139,6 +154,12 @@ function selectNote(nameithink) {
                                     "Content-type": "application/json; charset=UTF-8"
                                 }
                             })
+                                .then((response) => response)
+                                .then((response) => {
+                                    if (response.status == 418) {
+                                        alert("you've ran out of storage :3 changes will not be saved until you free up storage!!! owo")
+                                    }
+                                })
                         }
                     }, waitTime);
                 });

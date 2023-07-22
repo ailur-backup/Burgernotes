@@ -14,6 +14,7 @@ config.read("config.ini")
 HOST = config["config"]["HOST"]
 PORT = config["config"]["PORT"]
 SECRET_KEY = config["config"]["SECRET_KEY"]
+MAX_STORAGE = config["config"]["MAX_STORAGE"]
 
 if SECRET_KEY == "placeholder":
     print("[WARNING] Secret key not set")
@@ -45,6 +46,15 @@ def get_note(id):
     if post is None:
         return "error"
     return post
+
+def get_space(id):
+    conn = get_db_connection()
+    notes = conn.execute("SELECT content FROM notes WHERE creator = ? ORDER BY id DESC;", (id,)).fetchall()
+    conn.close()
+    spacetaken = 0
+    for x in notes:
+        spacetaken = spacetaken + len(x["content"].encode("utf-8"))
+    return spacetaken
 
 def get_session(id):
     conn = get_db_connection()
@@ -171,7 +181,9 @@ def apiuserinfo():
         datatemplate = {
             "username": user["username"],
             "id": user["id"],
-            "created": user["created"]
+            "created": user["created"],
+            "storageused": get_space(user["id"]),
+            "storagemax": int(MAX_STORAGE)
         }
         return datatemplate
 
@@ -253,6 +265,9 @@ def apieditnote():
         user = get_user(userCookie["id"])
 
         note = get_note(noteId)
+        
+        if get_space(user["id"]) + len(content.encode("utf-8")) > int(MAX_STORAGE):
+            return {}, 418
 
         if (note != "error"):
             if (user["id"] == note["creator"]):
