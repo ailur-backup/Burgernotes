@@ -49,11 +49,12 @@ def get_note(id):
 
 def get_space(id):
     conn = get_db_connection()
-    notes = conn.execute("SELECT content FROM notes WHERE creator = ? ORDER BY id DESC;", (id,)).fetchall()
+    notes = conn.execute("SELECT content, title FROM notes WHERE creator = ? ORDER BY id DESC;", (id,)).fetchall()
     conn.close()
     spacetaken = 0
     for x in notes:
         spacetaken = spacetaken + len(x["content"].encode("utf-8"))
+        spacetaken = spacetaken + len(x["title"].encode("utf-8"))
     return spacetaken
 
 def get_session(id):
