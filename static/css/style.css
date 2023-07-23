@@ -224,3 +224,109 @@ body {
     margin: 10px;
     box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
 }
+
+/* dark theme from my ass */
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--gray-950: #030712;
+		--gray-900: #111827;
+		--gray-800: #1f2937;
+		--gray-700: #374151;
+		--gray-600: #4b5563;
+		--gray-500: #6b7280;
+		--gray-400: #9ca3af;
+		--gray-300: #d1d5db;
+		--gray-200: #e5e7eb;
+		--gray-100: #f3f4f6;
+		--gray-50: #f9fafb;
+	}
+
+	body {
+		color: white;
+		background-color: var(--gray-900);
+	}
+
+	.topBar {
+		background-color: var(--gray-800);
+		backdrop-filter: blur(0px);
+		-webkit-backdrop-filter: blur(20px);
+		border: none;
+		border-color: transparent;
+		border-width: 0px;
+		border-bottom-width: 0px;
+	}
+
+	.notesBar {
+		background-color: var(--gray-800);
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+		border: none;
+		border-color: #dadada00;
+		border-width: 0px;
+		border-top-width: 0px;
+		border-right-width: 0px;
+	}
+
+	.noteBox {
+		background-color: var(--gray-900);
+		color: white;
+	}
+
+	.notesBar button {
+		color: white;
+	}
+
+	.notesBar .newNote img {
+		filter: invert(1);
+	}
+
+	.notesBar button {
+		background-color: var(--gray-700);
+		border-color: var(--gray-600);
+	}
+
+	.notesBar .selected {
+		border-color: #0d51a1 !important;
+	}
+
+	.optionsDiv {
+		background-color: var(--gray-800);
+		color: white;
+		border: 1px solid var(--gray-700);
+	}
+
+	.optionsDiv .exit {
+		background-color: crimson;
+		color: white;
+	}
+
+	.mainDiv .green {
+		background-color: var(--gray-800);
+		border: 1px solid #00b100;
+	}
+
+	.mainDiv .yellow {
+		background-color: var(--gray-800);
+		border: 1px solid #FFD700;
+	}
+
+	.inoutdiv {
+		border: 1px solid var(--gray-700);
+		border-radius: 8px;
+		background-color: var(--gray-800);
+		box-shadow: none;
+	}
+
+	.inoutdiv input {
+		border: solid 1px var(--gray-600);
+		background-color: var(--gray-700);
+		color: white;
+	}
+
+	.inoutdiv button {
+		background-color: var(--gray-700);
+		color: white;
+		border: 1px solid var(--gray-600);
+	}
+}
