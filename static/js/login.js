@@ -1,9 +1,11 @@
 if (localStorage.getItem("DONOTSHARE-secretkey") !== null) {
     window.location.replace("/app")
+    document.body.innerHTML = "Redirecting.."
     throw new Error();
 }
 if (localStorage.getItem("DONOTSHARE-password") !== null) {
     window.location.replace("/app")
+    document.body.innerHTML = "Redirecting.."
     throw new Error();
 }
 

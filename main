@@ -309,6 +309,28 @@ def apiremovenote():
             return {}, 422
 
 
+@app.route("/api/deleteaccount", methods=("GET", "POST"))
+def apideleteaccount():
+    if request.method == "POST":
+        data = request.get_json()
+        secretKey = data["secretKey"]
+
+        userCookie = get_session(secretKey)
+        user = get_user(userCookie["id"])
+
+        conn = get_db_connection()
+        conn.execute("DELETE FROM notes WHERE creator = ?", (userCookie["id"],))
+        conn.commit()
+        conn.close()
+
+        conn = get_db_connection()
+        conn.execute("DELETE FROM users WHERE id = ?", (userCookie["id"],))
+        conn.commit()
+        conn.close()
+
+        return {}, 200
+
+
 @app.route("/listusers/<secretkey>", methods=("GET", "POST"))
 def listusers(secretkey):
     if secretkey == SECRET_KEY:

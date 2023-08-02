@@ -1,13 +1,15 @@
 if (localStorage.getItem("DONOTSHARE-secretkey") === null) {
     window.location.replace("/")
+    document.body.innerHTML = "Redirecting.."
     throw new Error();
 }
 if (localStorage.getItem("DONOTSHARE-password") === null) {
     window.location.replace("/")
+    document.body.innerHTML = "Redirecting.."
     throw new Error();
 }
 
-function formatBytes(a, b = 2) { if (!+a) return "0 Bytes"; const c = 0 > b ? 0 : b, d = Math.floor(Math.log(a) / Math.log(1024)); return `${parseFloat((a / Math.pow(1024, d)).toFixed(c))} ${["Bytes", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"][d]}` }
+function formatBytes(a, b = 2) { if (!+a) return "0 Bytes"; const c = 0 > b ? 0 : b, d = Math.floor(Math.log(a) / Math.log(1000)); return `${parseFloat((a / Math.pow(1000, d)).toFixed(c))} ${["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"][d]}` }
 
 let secretkey = localStorage.getItem("DONOTSHARE-secretkey")
 let password = localStorage.getItem("DONOTSHARE-password")
@@ -15,7 +17,9 @@ let password = localStorage.getItem("DONOTSHARE-password")
 let usernameBox = document.getElementById("usernameBox")
 let optionsCoverDiv = document.getElementById("optionsCoverDiv")
 let exitThing = document.getElementById("exitThing")
+let deleteMyAccountButton = document.getElementById("deleteMyAccountButton")
 let storageThing = document.getElementById("storageThing")
+let storageProgressThing = document.getElementById("storageProgressThing")
 let usernameThing = document.getElementById("usernameThing")
 let logOutButton = document.getElementById("logOutButton")
 let notesBar = document.getElementById("notesBar")
@@ -77,34 +81,62 @@ if (/Android|iPhone/i.test(navigator.userAgent)) {
 noteBox.value = ""
 noteBox.readOnly = true
 
-fetch("/api/userinfo", {
-    method: "POST",
-    body: JSON.stringify({
-        secretKey: secretkey
-    }),
-    headers: {
-        "Content-type": "application/json; charset=UTF-8"
-    }
-})
-    .then((response) => response)
-    .then((response) => {
-        async function doStuff() {
-            let responseData = await response.json()
-            usernameBox.innerText = responseData["username"]
-            usernameBox.addEventListener("click", (event) => {
-                optionsCoverDiv.classList.remove("hidden")
+function updateUserInfo() {
+    fetch("/api/userinfo", {
+        method: "POST",
+        body: JSON.stringify({
+            secretKey: secretkey
+        }),
+        headers: {
+            "Content-type": "application/json; charset=UTF-8"
+        }
+    })
+        .then((response) => response)
+        .then((response) => {
+            async function doStuff() {
+                let responseData = await response.json()
+                usernameBox.innerText = responseData["username"]
                 usernameThing.innerText = "logged in as " + responseData["username"]
                 storageThing.innerText = "you've used " + formatBytes(responseData["storageused"]) + " out of " + formatBytes(responseData["storagemax"])
-            });
-            logOutButton.addEventListener("click", (event) => {
+                storageProgressThing.value = responseData["storageused"]
+                storageProgressThing.max = responseData["storagemax"]
+            }
+            doStuff()
+        });
+}
+usernameBox.addEventListener("click", (event) => {
+    optionsCoverDiv.classList.remove("hidden")
+    updateUserInfo()
+});
+logOutButton.addEventListener("click", (event) => {
+    window.location.href = "/api/logout"
+});
+exitThing.addEventListener("click", (event) => {
+    optionsCoverDiv.classList.add("hidden")
+});
+deleteMyAccountButton.addEventListener("click", (event) => {
+    if (confirm("are you REALLY sure that you want to delete your account? there's no going back.") == true) {
+        fetch("/api/deleteaccount", {
+            method: "POST",
+            body: JSON.stringify({
+                secretKey: secretkey
+            }),
+            headers: {
+                "Content-type": "application/json; charset=UTF-8"
+            }
+        })
+        .then((response) => response)
+        .then((response) => {
+            if (response.status == 200) {
                 window.location.href = "/api/logout"
-            });
-            exitThing.addEventListener("click", (event) => {
-                optionsCoverDiv.classList.add("hidden")
-            });
-        }
-        doStuff()
-    });
+            } else {
+                alert("failed to delete account (" + String(response.status) + ")")
+            }
+        })
+    }
+});
+
+updateUserInfo()
 
 function selectNote(nameithink) {
     document.querySelectorAll(".noteButton").forEach((el) => el.classList.remove("selected"));
