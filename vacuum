@@ -1,0 +1,18 @@
+#!/usr/bin/python3
+import sqlite3
+import os
+
+def get_db_connection():
+    conn = sqlite3.connect("database.db")
+    conn.row_factory = sqlite3.Row
+    return conn
+
+if os.path.exists("database.db"):
+    print("vacuuming..")
+    conn = get_db_connection()
+    conn.execute("VACUUM")
+    conn.commit()
+    conn.close()
+    print("success")
+else:
+    print("database not found")
