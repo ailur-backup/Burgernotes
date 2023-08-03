@@ -172,7 +172,7 @@ body {
 
 .inoutdiv input {
     width: calc(100% - 20px);
-    height: 25px;
+    height: 30px;
     margin-bottom: 10px;
     padding-left: 10px;
     padding-right: 10px;
@@ -190,10 +190,10 @@ body {
     padding-left: 20px;
     padding-right: 20px;
 
-    border: solid;
-    border-color: rgb(207, 207, 207);
-    border-width: 1px;
+    border: none;
     border-radius: 8px;
+
+    font-size: 14px;
 }
 
 .inoutdiv a {
@@ -219,6 +219,7 @@ body {
     text-decoration: none;
     background-color: #157efb;
     border-radius: 8px;
+    margin-left: 5px;
 }
 
 .mainDiv .feature {

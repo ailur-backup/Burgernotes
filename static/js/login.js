@@ -82,7 +82,7 @@ signupButton.addEventListener("click", (event) => {
                         showElements(true)
                     }
                     else {
-                        statusBox.innerText = "something went wrong! (error code: " + respStatus + ")"
+                        statusBox.innerText = "something went wrong! (error code: " + response.status + ")"
                         showElements(true)
                     }
                 }

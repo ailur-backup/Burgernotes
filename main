@@ -352,6 +352,10 @@ def listusers(secretkey):
 def apilogout():
     return render_template("logout.html")
 
+@app.errorhandler(500)
+def burger(e):
+    return {}, 500
+
 # Start server
 if __name__ == "__main__":
     print("[INFO] Server started")
