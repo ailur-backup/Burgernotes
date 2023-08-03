@@ -216,6 +216,7 @@ function updateNotes() {
                 document.querySelectorAll(".noteButton").forEach((el) => el.remove());
                 noteBox.readOnly = true
                 selectedNote = 0
+                noteBox.placeholder = ""
                 noteBox.value = ""
                 clearTimeout(timer)
 

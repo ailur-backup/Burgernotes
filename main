@@ -5,6 +5,7 @@ import time
 import secrets
 import configparser
 from waitress import serve
+from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, render_template, request, url_for, flash, redirect, session, make_response, send_from_directory, stream_with_context, Response, request
 
 # Parse configuration file, and check if anything is wrong with it
@@ -120,9 +121,11 @@ def apisignup():
         if not check_username_taken(username) == "error":
             return {}, 409
 
+        hashedpassword = generate_password_hash(password)
+
         conn = get_db_connection()
         conn.execute("INSERT INTO users (username, password, created) VALUES (?, ?, ?)",
-                     (username, password, str(time.time())))
+                     (username, hashedpassword, str(time.time())))
         conn.commit()
         conn.close()
 
@@ -156,7 +159,7 @@ def apilogin():
         userID = check_username_taken(username)
         user = get_user(userID)
 
-        if not password == user["password"]:
+        if not check_password_hash(user["password"], (password)):
             return {}, 401
 
         randomCharacters = secrets.token_hex(512)
