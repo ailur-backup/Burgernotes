@@ -187,7 +187,7 @@ def apiuserinfo():
             "id": user["id"],
             "created": user["created"],
             "storageused": get_space(user["id"]),
-            "storagemax": int(MAX_STORAGE)
+            "storagemax": MAX_STORAGE
         }
         return datatemplate
 
