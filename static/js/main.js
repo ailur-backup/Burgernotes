@@ -217,7 +217,6 @@ function updateNotes() {
     })
         .then((response) => response)
         .then((response) => {
-            document.querySelectorAll(".loadingStuff").forEach((el) => el.remove());
             async function doStuff() {
                 document.querySelectorAll(".noteButton").forEach((el) => el.remove());
                 noteBox.readOnly = true
@@ -257,6 +256,7 @@ function updateNotes() {
                         }
                     });
                 }
+                document.querySelectorAll(".loadingStuff").forEach((el) => el.remove());
             }
             doStuff()
         });
