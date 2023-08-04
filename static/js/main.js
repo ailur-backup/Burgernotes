@@ -27,6 +27,8 @@ let notesDiv = document.getElementById("notesDiv")
 let newNote = document.getElementById("newNote")
 let noteBox = document.getElementById("noteBox")
 let loadingStuff = document.getElementById("loadingStuff")
+let burgerDropdown = document.getElementById("burgerDropdown")
+let burgerButton = document.getElementById("burgerButton")
 
 for (let i = 0; i < 40; i++) {
     notesDiv.appendChild(loadingStuff.cloneNode())
@@ -289,4 +291,18 @@ newNote.addEventListener("click", (event) => {
                 }
             });
     }
+});
+document.body.addEventListener("click", (event) => {
+    if (event.clientX > 100) {
+        burgerDropdown.classList.add("hidden")
+    }
+    if (event.clientY > 50) {
+        burgerDropdown.classList.add("hidden")
+    }
+});
+burgerButton.addEventListener("click", (event) => {
+    burgerDropdown.classList.remove("hidden")
+
+    burgerDropdown.style.left = String(event.clientX) + "px"
+    burgerDropdown.style.top = String(event.clientY) + "px"
 });
