@@ -28,7 +28,7 @@ let newNote = document.getElementById("newNote")
 let noteBox = document.getElementById("noteBox")
 let loadingStuff = document.getElementById("loadingStuff")
 
-for (let i = 0; i < 10; i++) {
+for (let i = 0; i < 30; i++) {
     notesDiv.appendChild(loadingStuff.cloneNode())
 }
 
