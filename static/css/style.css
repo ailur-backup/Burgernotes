@@ -74,6 +74,10 @@ body {
     text-align: left;
 }
 
+.notesBar .loadingStuff {
+    border: none;
+}
+
 .notesBar .selected {
     background-color: #157efb !important;
     color: white
@@ -103,6 +107,10 @@ body {
     width: calc(100% - 180px - 7px - 6px);
     height: calc(100% - 50px - 6px - 8px);
     font-family: "Inter", sans-serif;
+}
+
+.noteBox:focus {
+    outline: none
 }
 
 .optionsCoverDiv {
@@ -145,9 +153,11 @@ body {
     border-radius: 99px;
     height: 7px;
 }
+
 .optionsDiv progress::-moz-progress-bar {
     background: #157efb;
 }
+
 .optionsDiv progresss::-webkit-progress-value {
     background: #157efb;
 }
@@ -247,94 +257,94 @@ body {
 /* dark theme, slightly modified */
 
 @media (prefers-color-scheme: dark) {
-	:root {
-		--gray-950: #030712;
-		--gray-900: #111827;
-		--gray-800: #1f2937;
-		--gray-700: #374151;
-		--gray-600: #4b5563;
-		--gray-500: #6b7280;
-		--gray-400: #9ca3af;
-		--gray-300: #d1d5db;
-		--gray-200: #e5e7eb;
-		--gray-100: #f3f4f6;
-		--gray-50: #f9fafb;
-	}
+    :root {
+        --gray-950: #030712;
+        --gray-900: #111827;
+        --gray-800: #1f2937;
+        --gray-700: #374151;
+        --gray-600: #4b5563;
+        --gray-500: #6b7280;
+        --gray-400: #9ca3af;
+        --gray-300: #d1d5db;
+        --gray-200: #e5e7eb;
+        --gray-100: #f3f4f6;
+        --gray-50: #f9fafb;
+    }
 
-	body {
-		color: white;
-		background-color: #030303;
-	}
+    body {
+        color: white;
+        background-color: #030303;
+    }
 
-	.topBar {
-		background-color: rgba(18, 18, 18, 0.5);
+    .topBar {
+        background-color: rgba(18, 18, 18, 0.5);
         border-color: #303030;
-	}
+    }
 
-	.notesBar {
-		background-color: #030303;
+    .notesBar {
+        background-color: #030303;
         border: solid;
         border-width: 0px;
         border-right-width: 1px;
         border-color: #303030;
-	}
+    }
 
-	.noteBox {
+    .noteBox {
         background-color: #030303;
-		color: white;
-	}
+        color: white;
+    }
 
-	.notesBar button {
-		color: white;
-	}
+    .notesBar button {
+        color: white;
+    }
 
-	.notesBar .newNote img {
-		filter: invert(1);
-	}
+    .notesBar .newNote img {
+        filter: invert(1);
+    }
 
-	.notesBar button {
-		background-color: #141414;
+    .notesBar button {
+        background-color: #141414;
         border: none;
-	}
+    }
 
-	.notesBar .selected {
-		border-color: #0d51a1 !important;
-	}
+    .notesBar .selected {
+        border-color: #0d51a1 !important;
+    }
 
-	.optionsDiv {
-		background-color: var(--gray-800);
-		color: white;
-		border: 1px solid var(--gray-700);
-	}
+    .optionsDiv {
+        background-color: var(--gray-800);
+        color: white;
+        border: 1px solid var(--gray-700);
+    }
 
-	.optionsDiv .exit {
+    .optionsDiv .exit {
         background-color: var(--gray-700);
-		color: white;
-	}
+        color: white;
+    }
 
-	.mainDiv .feature {
-		background-color: #141414;
-		border: solid;
+    .mainDiv .feature {
+        background-color: #141414;
+        border: solid;
         border-width: 1px;
         border-color: #303030;
-	}
+    }
 
-	.inoutdiv {
-		border: 1px solid var(--gray-700);
-		border-radius: 8px;
-		background-color: var(--gray-800);
-		box-shadow: none;
-	}
+    .inoutdiv {
+        border: 1px solid var(--gray-700);
+        border-radius: 8px;
+        background-color: var(--gray-800);
+        box-shadow: none;
+    }
 
-	.inoutdiv input {
-		border: solid 1px var(--gray-600);
-		background-color: var(--gray-700);
-		color: white;
-	}
+    .inoutdiv input {
+        border: solid 1px var(--gray-600);
+        background-color: var(--gray-700);
+        color: white;
+    }
 
-	.inoutdiv button {
-		background-color: var(--gray-700);
-		color: white;
-		border: 1px solid var(--gray-600);
-	}
+    .inoutdiv button {
+        background-color: var(--gray-700);
+        color: white;
+        border: 1px solid var(--gray-600);
+    }
 }

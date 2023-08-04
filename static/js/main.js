@@ -26,6 +26,11 @@ let notesBar = document.getElementById("notesBar")
 let notesDiv = document.getElementById("notesDiv")
 let newNote = document.getElementById("newNote")
 let noteBox = document.getElementById("noteBox")
+let loadingStuff = document.getElementById("loadingStuff")
+
+for (let i = 0; i < 10; i++) {
+    notesDiv.appendChild(loadingStuff.cloneNode())
+}
 
 let selectedNote = 0
 let timer
@@ -125,14 +130,14 @@ deleteMyAccountButton.addEventListener("click", (event) => {
                 "Content-type": "application/json; charset=UTF-8"
             }
         })
-        .then((response) => response)
-        .then((response) => {
-            if (response.status == 200) {
-                window.location.href = "/api/logout"
-            } else {
-                alert("failed to delete account (" + String(response.status) + ")")
-            }
-        })
+            .then((response) => response)
+            .then((response) => {
+                if (response.status == 200) {
+                    window.location.href = "/api/logout"
+                } else {
+                    alert("failed to delete account (" + String(response.status) + ")")
+                }
+            })
     }
 });
 
@@ -212,6 +217,7 @@ function updateNotes() {
     })
         .then((response) => response)
         .then((response) => {
+            document.querySelectorAll(".loadingStuff").forEach((el) => el.remove());
             async function doStuff() {
                 document.querySelectorAll(".noteButton").forEach((el) => el.remove());
                 noteBox.readOnly = true
