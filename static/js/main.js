@@ -28,9 +28,10 @@ let newNote = document.getElementById("newNote")
 let noteBox = document.getElementById("noteBox")
 let loadingStuff = document.getElementById("loadingStuff")
 
-for (let i = 0; i < 30; i++) {
+for (let i = 0; i < 40; i++) {
     notesDiv.appendChild(loadingStuff.cloneNode())
 }
+loadingStuff.remove()
 
 let selectedNote = 0
 let timer
