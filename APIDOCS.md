@@ -8,7 +8,7 @@ POST - /api/signup - provide "username" and "password".
 POST - /api/login - provide "username" and "password".
 
 To prevent the server from knowing the encryption key, password you provide in the request must be hashed with the argon2 algorithm.
-The salt should be the password.
+The salt should be the SHA-512 of the password.
 
 Password must be at least 14 characters, username must be under 20 characters and alphanumeric.
 
