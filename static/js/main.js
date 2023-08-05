@@ -29,6 +29,7 @@ let noteBox = document.getElementById("noteBox")
 let loadingStuff = document.getElementById("loadingStuff")
 let burgerDropdown = document.getElementById("burgerDropdown")
 let burgerButton = document.getElementById("burgerButton")
+let exportNotesButton = document.getElementById("exportNotesButton")
 
 for (let i = 0; i < 40; i++) {
     notesDiv.appendChild(loadingStuff.cloneNode())
@@ -305,4 +306,54 @@ burgerButton.addEventListener("click", (event) => {
 
     burgerDropdown.style.left = String(event.clientX) + "px"
     burgerDropdown.style.top = String(event.clientY) + "px"
+});
+function downloadObjectAsJson(exportObj, exportName) {
+    var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
+    var downloadAnchorNode = document.createElement("a");
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", exportName + ".json");
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+}
+
+function exportNotes() {
+    let noteExport = []
+    fetch("/api/exportnotes", {
+        method: "POST",
+        body: JSON.stringify({
+            secretKey: secretkey
+        }),
+        headers: {
+            "Content-type": "application/json; charset=UTF-8"
+        }
+    })
+        .then((response) => response)
+        .then((response) => {
+            async function doStuff() {
+                let responseData = await response.json()
+                for (let i in responseData) {
+                    let bytes = CryptoJS.AES.decrypt(responseData[i]["title"], password);
+                    let originalTitle = bytes.toString(CryptoJS.enc.Utf8);
+
+                    responseData[i]["title"] = originalTitle
+
+                    let bytesd = CryptoJS.AES.decrypt(responseData[i]["content"], password);
+                    let originalContent = bytesd.toString(CryptoJS.enc.Utf8);
+
+                    responseData[i]["content"] = originalContent
+                }
+                let jsonString = JSON.parse(JSON.stringify(responseData))
+                console.log(jsonString)
+
+                downloadObjectAsJson(jsonString, "data")
+            }
+            doStuff()
+        })
+}
+
+exportNotesButton.addEventListener("click", (event) => {
+    exportNotesButton.innerText = "exporting.."
+    exportNotes()
+    exportNotesButton.innerText = "export notes"
 });

@@ -188,6 +188,7 @@ body {
     padding: 10px;
     color: black;
     border-radius: 8px;
+    min-width: 338.5px
 }
 
 .optionsDiv button {

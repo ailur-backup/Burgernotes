@@ -214,6 +214,33 @@ def apilistnotes():
             datatemplate.append(notetemplate)
 
         return datatemplate, 200
+
+@app.route("/api/exportnotes", methods=("GET", "POST"))
+def apiexportnotes():
+    if request.method == "POST":
+        data = request.get_json()
+        secretKey = data["secretKey"]
+
+        userCookie = get_session(secretKey)
+        user = get_user(userCookie["id"])
+
+        conn = get_db_connection()
+        notes = conn.execute("SELECT * FROM notes WHERE creator = ? ORDER BY id DESC;", (user["id"],)).fetchall()
+        conn.close()
+
+        datatemplate = []
+
+        for note in notes:
+            notetemplate = {
+                "id": note["id"],
+                "created": note["created"],
+                "edited": note["edited"],
+                "title": note["title"],
+                "content": note["content"]
+            }
+            datatemplate.append(notetemplate)
+
+        return datatemplate, 200
     
 @app.route("/api/newnote", methods=("GET", "POST"))
 def apinewnote():
