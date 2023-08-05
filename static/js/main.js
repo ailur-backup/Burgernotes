@@ -90,6 +90,8 @@ if (/Android|iPhone/i.test(navigator.userAgent)) {
 noteBox.value = ""
 noteBox.readOnly = true
 
+let noteCount = 0
+
 function updateUserInfo() {
     fetch("/api/userinfo", {
         method: "POST",
@@ -109,6 +111,7 @@ function updateUserInfo() {
                 storageThing.innerText = "you've used " + formatBytes(responseData["storageused"]) + " out of " + formatBytes(responseData["storagemax"])
                 storageProgressThing.value = responseData["storageused"]
                 storageProgressThing.max = responseData["storagemax"]
+                noteCount = responseData["notecount"]
             }
             doStuff()
         });
@@ -333,6 +336,8 @@ function exportNotes() {
             async function doStuff() {
                 let responseData = await response.json()
                 for (let i in responseData) {
+                    exportNotes.innerText = "decrypting " + i + "/" + noteCount
+
                     let bytes = CryptoJS.AES.decrypt(responseData[i]["title"], password);
                     let originalTitle = bytes.toString(CryptoJS.enc.Utf8);
 
@@ -346,6 +351,7 @@ function exportNotes() {
                 let jsonString = JSON.parse(JSON.stringify(responseData))
                 console.log(jsonString)
 
+                exportNotesButton.innerText = "export notes"
                 downloadObjectAsJson(jsonString, "data")
             }
             doStuff()
@@ -353,7 +359,6 @@ function exportNotes() {
 }
 
 exportNotesButton.addEventListener("click", (event) => {
-    exportNotesButton.innerText = "exporting.."
+    exportNotesButton.innerText = "downloading.."
     exportNotes()
-    exportNotesButton.innerText = "export notes"
 });

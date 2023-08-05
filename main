@@ -58,6 +58,15 @@ def get_space(id):
         spacetaken = spacetaken + len(x["title"].encode("utf-8"))
     return spacetaken
 
+def get_note_count(id):
+    conn = get_db_connection()
+    notes = conn.execute("SELECT content, title FROM notes WHERE creator = ? ORDER BY id DESC;", (id,)).fetchall()
+    conn.close()
+    notecount = 0
+    for x in notes:
+        notecount = notecount + 1
+    return notecount
+
 def get_session(id):
     conn = get_db_connection()
     post = conn.execute("SELECT * FROM sessions WHERE session = ?",
@@ -187,7 +196,8 @@ def apiuserinfo():
             "id": user["id"],
             "created": user["created"],
             "storageused": get_space(user["id"]),
-            "storagemax": MAX_STORAGE
+            "storagemax": MAX_STORAGE,
+            "notecount": get_note_count(user["id"])
         }
         return datatemplate
 
