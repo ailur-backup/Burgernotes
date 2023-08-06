@@ -1,6 +1,8 @@
 # Burgernotes API docs
 Use the Burgernotes API to automate tasks, build your own client, and more!
 
+Headers should be: "Content-type: application/json; charset=UTF-8" for all POSTs
+
 ## Authentication
 
 POST - /api/signup - provide "username" and "password".
@@ -8,6 +10,14 @@ POST - /api/signup - provide "username" and "password".
 POST - /api/login - provide "username" and "password".
 
 To prevent the server from knowing the encryption key, password you provide in the request must be hashed with the argon2 algorithm.
+
+Parallelism should be 1
+Iterations should be 256
+Memory Allocated in bytes should be 512
+Length of Hash should be 32 bytes
+The output should be in the encoded format, not the hashed format
+
+
 The salt should be the SHA-512 of the password.
 
 Password must be at least 14 characters, username must be under 20 characters and alphanumeric.
