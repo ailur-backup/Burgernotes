@@ -1,6 +1,8 @@
 # Burgernotes API docs
 Use the Burgernotes API to automate tasks, build your own client, and more!
 
+Headers should be: "Content-type: application/json; charset=UTF-8" for all POSTs
+
 ## Authentication
 
 POST - /api/signup - provide "username" and "password".
