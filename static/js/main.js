@@ -16,6 +16,12 @@ let password = localStorage.getItem("DONOTSHARE-password")
 
 let usernameBox = document.getElementById("usernameBox")
 let optionsCoverDiv = document.getElementById("optionsCoverDiv")
+let optionsDiv = document.getElementById("optionsDiv")
+let errorDiv = document.getElementById("errorDiv")
+let errorMessageThing = document.getElementById("errorMessageThing")
+let closeErrorButton = document.getElementById("closeErrorButton")
+let cancelErrorButton = document.getElementById("cancelErrorButton")
+let errorInput = document.getElementById("errorInput")
 let exitThing = document.getElementById("exitThing")
 let deleteMyAccountButton = document.getElementById("deleteMyAccountButton")
 let storageThing = document.getElementById("storageThing")
@@ -92,6 +98,48 @@ noteBox.readOnly = true
 
 let noteCount = 0
 
+function displayError(message) {
+    errorDiv.classList.remove("hidden")
+    optionsCoverDiv.classList.remove("hidden")
+
+    errorMessageThing.innerText = message
+}
+
+closeErrorButton.addEventListener("click", (event) => {
+    errorDiv.classList.add("hidden")
+    optionsCoverDiv.classList.add("hidden")
+});
+
+
+function displayPrompt(message, callback) {
+    errorMessageThing.innerText = message
+    errorInput.value = ""
+
+    closeErrorButton.addEventListener("click", (event) => {
+        callback(errorInput.value)
+        callback = undefined
+    });
+    cancelErrorButton.addEventListener("click", (event) => {
+        callback = undefined
+        errorDiv.classList.add("hidden")
+        optionsCoverDiv.classList.add("hidden")
+        errorInput.classList.add("hidden")
+        cancelErrorButton.classList.add("hidden")
+    });
+
+    errorDiv.classList.remove("hidden")
+    optionsCoverDiv.classList.remove("hidden")
+    errorInput.classList.remove("hidden")
+    cancelErrorButton.classList.remove("hidden")
+}
+
+closeErrorButton.addEventListener("click", (event) => {
+    errorDiv.classList.add("hidden")
+    optionsCoverDiv.classList.add("hidden")
+    errorInput.classList.add("hidden")
+    cancelErrorButton.classList.add("hidden")
+});
+
 function updateUserInfo() {
     fetch("/api/userinfo", {
         method: "POST",
@@ -118,12 +166,14 @@ function updateUserInfo() {
 }
 usernameBox.addEventListener("click", (event) => {
     optionsCoverDiv.classList.remove("hidden")
+    optionsDiv.classList.remove("hidden")
     updateUserInfo()
 });
 logOutButton.addEventListener("click", (event) => {
     window.location.href = "/api/logout"
 });
 exitThing.addEventListener("click", (event) => {
+    optionsDiv.classList.add("hidden")
     optionsCoverDiv.classList.add("hidden")
 });
 deleteMyAccountButton.addEventListener("click", (event) => {
@@ -142,7 +192,7 @@ deleteMyAccountButton.addEventListener("click", (event) => {
                 if (response.status == 200) {
                     window.location.href = "/api/logout"
                 } else {
-                    alert("failed to delete account (" + String(response.status) + ")")
+                    displayError("failed to delete account (" + String(response.status) + ")")
                 }
             })
     }
@@ -165,6 +215,12 @@ function selectNote(nameithink) {
             "Content-type": "application/json; charset=UTF-8"
         }
     })
+        .catch((error) => {
+            noteBox.readOnly = true
+            noteBox.value = ""
+            noteBox.placeholder = ""
+            displayError("something went wrong, please try again later")
+        })
         .then((response) => response)
         .then((response) => {
             selectedNote = nameithink
@@ -201,8 +257,11 @@ function selectNote(nameithink) {
                                 .then((response) => response)
                                 .then((response) => {
                                     if (response.status == 418) {
-                                        alert("you've ran out of storage :3 changes will not be saved until you free up storage!!! owo")
+                                        displayError("you've ran out of storage :3 changes will not be saved until you free up storage!!! owo")
                                     }
+                                })
+                                .catch((error) => {
+                                    displayError("failed to save changes, please try again later")
                                 })
                         }
                     }, waitTime);
@@ -257,7 +316,12 @@ function updateNotes() {
                                 }
                             })
                                 .then((response) => response)
-                                .then((response) => { updateNotes() })
+                                .then((response) => {
+                                    updateNotes()
+                                })
+                                .catch((error) => {
+                                    displayError("something went wrong! please try again later")
+                                })
                         } else {
                             selectNote(responseData[i]["id"])
                         }
@@ -272,28 +336,34 @@ function updateNotes() {
 updateNotes()
 
 newNote.addEventListener("click", (event) => {
-    let noteName = prompt("note name? :3")
-    if (noteName != null) {
-        let encryptedName = CryptoJS.AES.encrypt(noteName, password).toString();
-        fetch("/api/newnote", {
-            method: "POST",
-            body: JSON.stringify({
-                secretKey: secretkey,
-                noteName: encryptedName,
-            }),
-            headers: {
-                "Content-type": "application/json; charset=UTF-8"
-            }
-        })
-            .then((response) => response)
-            .then((response) => {
-                if (response.status !== 200) {
-                    updateNotes()
-                    alert('"' + noteName + '"' + " already exists")
-                } else {
-                    updateNotes()
+    let noteName = displayPrompt("note name? :3", burgerFunction)
+    //let noteName = prompt("note name? :3")
+    function burgerFunction(noteName) {
+        if (noteName != null) {
+            let encryptedName = CryptoJS.AES.encrypt(noteName, password).toString();
+            fetch("/api/newnote", {
+                method: "POST",
+                body: JSON.stringify({
+                    secretKey: secretkey,
+                    noteName: encryptedName,
+                }),
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
                 }
-            });
+            })
+                .catch((error) => {
+                    displayError("failed to create new note, please try again later")
+                })
+                .then((response) => response)
+                .then((response) => {
+                    if (response.status !== 200) {
+                        updateNotes()
+                        displayError("something went wrong while creating note")
+                    } else {
+                        updateNotes()
+                    }
+                });
+        }
     }
 });
 document.body.addEventListener("click", (event) => {
@@ -353,6 +423,9 @@ function exportNotes() {
 
                 exportNotesButton.innerText = "export notes"
                 downloadObjectAsJson(jsonString, "data")
+                optionsDiv.classList.add("hidden")
+                displayError("exported notes!")
+
             }
             doStuff()
         })

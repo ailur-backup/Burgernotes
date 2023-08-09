@@ -203,6 +203,24 @@ body {
     border-radius: 8px;
 }
 
+.optionsDiv input {
+    width: calc(100% - 12px);
+    height: 25px;
+    background-color: ffffff;
+    padding-left: 5px;
+    padding-right: 5px;
+    margin-bottom: 7px;
+    border: solid;
+    border-color: #dadada;
+    border-width: 1px;
+    border-radius: 8px;
+}
+
+.optionsDiv input:focus {
+    outline: 0;
+    border-color: #157efb;
+}
+
 .optionsDiv progress {
     width: 100%;
     background-color: #d8d8d8;

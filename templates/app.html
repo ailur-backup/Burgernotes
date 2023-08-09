@@ -31,7 +31,7 @@
     </div>
 
     <div id="optionsCoverDiv" class="optionsCoverDiv hidden">
-        <div class="optionsDiv">
+        <div id="optionsDiv" class="optionsDiv hidden">
             <button class="exit" id="exitThing">X</button>
             <h3>manage your account</h3>
             <p id="usernameThing"></p>
@@ -40,6 +40,12 @@
             <button id="logOutButton">log out</button>
             <button id="deleteMyAccountButton">delete my account</button>
             <button id="exportNotesButton">export notes</button>
+        </div>
+        <div id="errorDiv" class="optionsDiv hidden">
+            <p id="errorMessageThing"></p>
+            <input class="hidden" id="errorInput" type="text" placeholder="e.g. shopping list"><br></input>
+            <button id="closeErrorButton">OK</button>
+            <button class="hidden" id="cancelErrorButton">Cancel</button>
         </div>
     </div>
 
