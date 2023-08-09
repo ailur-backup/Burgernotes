@@ -119,6 +119,17 @@ function displayPrompt(message, callback) {
         callback(errorInput.value)
         callback = undefined
     });
+    errorInput.addEventListener("keyup", (event) => {
+        if (event.key == "Enter") {
+            callback(errorInput.value)
+            callback = undefined
+
+            errorDiv.classList.add("hidden")
+            optionsCoverDiv.classList.add("hidden")
+            errorInput.classList.add("hidden")
+            cancelErrorButton.classList.add("hidden")
+        }
+    });
     cancelErrorButton.addEventListener("click", (event) => {
         callback = undefined
         errorDiv.classList.add("hidden")
@@ -131,6 +142,8 @@ function displayPrompt(message, callback) {
     optionsCoverDiv.classList.remove("hidden")
     errorInput.classList.remove("hidden")
     cancelErrorButton.classList.remove("hidden")
+
+    errorInput.focus()
 }
 
 closeErrorButton.addEventListener("click", (event) => {
@@ -236,8 +249,6 @@ function selectNote(nameithink) {
                 noteBox.value = originalText
 
                 noteBox.addEventListener("input", (event) => {
-                    const text = noteBox.value;
-
                     clearTimeout(timer);
                     timer = setTimeout(() => {
                         let encryptedText = CryptoJS.AES.encrypt(noteBox.value, password).toString();

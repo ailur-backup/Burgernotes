@@ -192,8 +192,10 @@ body {
 }
 
 .optionsDiv button {
+    width: 100%;
     padding: 10px;
     margin-right: 5px;
+    margin-bottom: 7px;
     padding-left: 15px;
     padding-right: 15px;
     color: white;
@@ -201,6 +203,15 @@ body {
     text-decoration: none;
     background-color: #157efb;
     border-radius: 8px;
+}
+
+.optionsDiv .normalButton {
+    width: auto;
+    margin-bottom: 0px;
+}
+
+.optionsDiv .lastButton {
+    margin-bottom: 0px;
 }
 
 .optionsDiv input {
@@ -246,6 +257,20 @@ body {
     background-color: #e9e9e9;
     color: black;
     border-radius: 100%;
+}
+
+.optionsDiv img {
+    height: 18px;
+    padding-right: 5px;
+    filter: invert(100%)
+}
+
+.optionsDiv .section {
+    width: 100%;
+    height: 1px;
+    background-color: #d8d8d8;
+    margin-top: 2px;
+    margin-bottom: 10px;
 }
 
 /* Sign up/log in div */

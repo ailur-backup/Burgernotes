@@ -14,8 +14,8 @@
 
 <body>
     <div class="topBar">
-        <p class="logo" id="burgerButton">burgernotes</p>
-        <p id="usernameBox" class="usernameBox"></p>
+        <p tabindex="0" class="logo" id="burgerButton">burgernotes</p>
+        <p tabindex="0" id="usernameBox" class="usernameBox"></p>
     </div>
 
     <div id="notesBar" class="notesBar">
@@ -33,19 +33,23 @@
     <div id="optionsCoverDiv" class="optionsCoverDiv hidden">
         <div id="optionsDiv" class="optionsDiv hidden">
             <button class="exit" id="exitThing">X</button>
-            <h3>manage your account</h3>
+            <h3>your account</h3>
             <p id="usernameThing"></p>
+            <div class="section"></div>
+            <p>storage</p>
             <progress id="storageProgressThing" value="0" max="100"></progress><br>
             <p id="storageThing"></p>
-            <button id="logOutButton">log out</button>
-            <button id="deleteMyAccountButton">delete my account</button>
-            <button id="exportNotesButton">export notes</button>
+            <div class="section"></div>
+            <p>account managment</p>
+            <button id="deleteMyAccountButton"><img src="/static/svg/delete_forever.svg">delete my account</button>
+            <button id="exportNotesButton"><img src="/static/svg/download.svg">export notes</button>
+            <button class="lastButton" id="logOutButton"><img src="/static/svg/logout.svg">log out</button>
         </div>
         <div id="errorDiv" class="optionsDiv hidden">
             <p id="errorMessageThing"></p>
             <input class="hidden" id="errorInput" type="text" placeholder="e.g. shopping list"><br></input>
-            <button id="closeErrorButton">OK</button>
-            <button class="hidden" id="cancelErrorButton">Cancel</button>
+            <button class="normalButton" id="closeErrorButton">OK</button>
+            <button class="normalButton hidden" id="cancelErrorButton">Cancel</button>
         </div>
     </div>
 
