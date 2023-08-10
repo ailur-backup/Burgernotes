@@ -1,0 +1,23 @@
+#!/usr/bin/python3
+import configparser
+from waitress import serve
+from flask import Flask, render_template, request, url_for, flash, redirect, session, make_response, send_from_directory, stream_with_context, Response, request
+
+config = configparser.ConfigParser()
+config.read("config.ini")
+
+HOST = config["config"]["HOST"]
+PORT = config["config"]["PORT"]
+SECRET_KEY = config["config"]["SECRET_KEY"]
+
+app = Flask(__name__, static_folder=None)
+app.config["SECRET_KEY"] = SECRET_KEY
+
+@app.route("/")
+def main():
+    return render_template("down.html"), 503
+
+if __name__ == "__main__":
+    print("[INFO] Server started")
+    serve(app, host=HOST, port=PORT)
+    print("[INFO] Server stopped")
