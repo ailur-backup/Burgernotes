@@ -13,8 +13,8 @@ SECRET_KEY = config["config"]["SECRET_KEY"]
 app = Flask(__name__, static_folder=None)
 app.config["SECRET_KEY"] = SECRET_KEY
 
-@app.route("/")
-def main():
+@app.errorhandler(404)
+def main(e):
     return render_template("down.html"), 503
 
 @app.route("/grid.svg")
