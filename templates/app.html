@@ -19,21 +19,17 @@
     </div>
 
     <div id="notesBar" class="notesBar">
-        <button id="newNote" class="newNote"><img id="newNoteImage" draggable="false" alt="" src="/static/svg/add.svg">new note</button>
+        <button id="newNote" class="newNote"><img id="newNoteImage" draggable="false" alt=""
+                src="/static/svg/add.svg">new note</button>
         <div id="notesDiv" class="notesDiv">
             <button class="loadingStuff" id="loadingStuff"></button>
         </div>
     </div>
 
-    <div class="burgerDropdown hidden" id="burgerDropdown">
-        <a href="/">burgernotes</a><br><br>
-        <a href="/" class="hidden">:3</a>
-    </div>
-
     <div id="optionsCoverDiv" class="optionsCoverDiv hidden">
         <div id="optionsDiv" class="optionsDiv hidden">
             <button class="exit" id="exitThing">X</button>
-            <h3>your account</h3>
+            <h3 class="w300">your account</h3>
             <p id="usernameThing"></p>
             <div class="section"></div>
             <p>storage</p>
@@ -56,6 +52,12 @@
     <textarea id="noteBox" class="noteBox"></textarea>
 
     <script type="text/javascript" src="/static/js/main.js"></script>
+    <script>
+        for (let i = 0; i < 40; i++) {
+            notesDiv.appendChild(loadingStuff.cloneNode())
+        }
+        loadingStuff.remove()
+    </script>
 </body>
 
 </html>

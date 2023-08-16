@@ -1,10 +1,10 @@
 if (localStorage.getItem("DONOTSHARE-secretkey") === null) {
-    window.location.replace("/")
+    window.location.replace("/login")
     document.body.innerHTML = "Redirecting.."
     throw new Error();
 }
 if (localStorage.getItem("DONOTSHARE-password") === null) {
-    window.location.replace("/")
+    window.location.replace("/login")
     document.body.innerHTML = "Redirecting.."
     throw new Error();
 }
@@ -33,14 +33,8 @@ let notesDiv = document.getElementById("notesDiv")
 let newNote = document.getElementById("newNote")
 let noteBox = document.getElementById("noteBox")
 let loadingStuff = document.getElementById("loadingStuff")
-let burgerDropdown = document.getElementById("burgerDropdown")
 let burgerButton = document.getElementById("burgerButton")
 let exportNotesButton = document.getElementById("exportNotesButton")
-
-for (let i = 0; i < 40; i++) {
-    notesDiv.appendChild(loadingStuff.cloneNode())
-}
-loadingStuff.remove()
 
 let selectedNote = 0
 let timer
@@ -376,20 +370,6 @@ newNote.addEventListener("click", (event) => {
                 });
         }
     }
-});
-document.body.addEventListener("click", (event) => {
-    if (event.clientX > 100) {
-        burgerDropdown.classList.add("hidden")
-    }
-    if (event.clientY > 50) {
-        burgerDropdown.classList.add("hidden")
-    }
-});
-burgerButton.addEventListener("click", (event) => {
-    burgerDropdown.classList.remove("hidden")
-
-    burgerDropdown.style.left = String(event.clientX) + "px"
-    burgerDropdown.style.top = String(event.clientY) + "px"
 });
 function downloadObjectAsJson(exportObj, exportName) {
     var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));

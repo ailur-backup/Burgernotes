@@ -104,6 +104,10 @@ def signup():
 def login():
     return render_template("login.html")
 
+@app.route("/privacy")
+def privacy():
+    return render_template("privacy.html")
+
 # API
 @app.route("/api/signup", methods=("GET", "POST"))
 def apisignup():
