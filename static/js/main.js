@@ -9,6 +9,10 @@ if (localStorage.getItem("DONOTSHARE-password") === null) {
     throw new Error();
 }
 
+if (localStorage.getItem("CACHE-username") !== null) {
+    document.getElementById("usernameBox").innerText = localStorage.getItem("CACHE-username")
+}
+
 function formatBytes(a, b = 2) { if (!+a) return "0 Bytes"; const c = 0 > b ? 0 : b, d = Math.floor(Math.log(a) / Math.log(1000)); return `${parseFloat((a / Math.pow(1000, d)).toFixed(c))} ${["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"][d]}` }
 
 function truncateString(str, num) {
@@ -182,7 +186,7 @@ function updateUserInfo() {
                     displayError("Something went wrong. Signing you out..")
                     closeErrorButton.classList.add("hidden")
                     usernameBox.innerText = ""
-                    setTimeout(function() {
+                    setTimeout(function () {
                         window.location.replace("/api/logout")
                     }, 2500);
                 } else {
@@ -193,6 +197,7 @@ function updateUserInfo() {
                     storageProgressThing.value = responseData["storageused"]
                     storageProgressThing.max = responseData["storagemax"]
                     noteCount = responseData["notecount"]
+                    localStorage.setItem("CACHE-username", responseData["username"])
                 }
             }
             doStuff()
@@ -256,9 +261,9 @@ sessionManagerButton.addEventListener("click", (event) => {
                     let sessionRemoveButton = document.createElement("button")
                     sessionText.classList.add("w300")
                     if (responseData[i]["thisSession"] == true) {
-                        sessionText.innerHTML = "<span style='background-color: #157efb; color: white; padding: 8px; border-radius: 8px; margin-right: 5px;'>current</span>" + truncateString(responseData[i]["device"], 18)
+                        sessionText.innerText = "(current) " + truncateString(responseData[i]["device"], 18)
                     } else {
-                        sessionText.innerHTML = truncateString(responseData[i]["device"], 27)
+                        sessionText.innerText = truncateString(responseData[i]["device"], 27)
                     }
                     sessionText.title = responseData[i]["device"]
                     sessionRemoveButton.innerText = "X"

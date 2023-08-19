@@ -61,3 +61,7 @@ please display a warning before this action
 
 POST - /api/exportnotes - export notes, provide "secretKey"
 note content and title will have to be decrypted
+
+POST - /api/sessions/list - show all sessions, provide "secretKey"
+
+POST - /api/sessions/remove - remove session, provide "secretKey" and "sessionId"
