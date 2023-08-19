@@ -39,7 +39,16 @@
             <p>account managment</p>
             <button id="deleteMyAccountButton"><img src="/static/svg/delete_forever.svg">delete my account</button>
             <button id="exportNotesButton"><img src="/static/svg/download.svg">export notes</button>
+            <button id="sessionManagerButton"><img src="/static/svg/list.svg">session manager</button>
             <button class="lastButton" id="logOutButton"><img src="/static/svg/logout.svg">log out</button>
+        </div>
+        <div id="sessionManagerDiv" class="optionsDiv hidden">
+            <button class="exit" id="exitSessionsThing">X</button>
+            <h3 class="w300">session manager</h3>
+            <p>manage your sessions</p>
+            <div class="section"></div>
+            <div class="sessionDiv" id="sessionDiv">
+            </div>
         </div>
         <div id="errorDiv" class="optionsDiv hidden">
             <p id="errorMessageThing"></p>

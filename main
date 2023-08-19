@@ -76,6 +76,15 @@ def get_session(id):
         return "error"
     return post
 
+def get_session_from_sessionid(id):
+    conn = get_db_connection()
+    post = conn.execute("SELECT * FROM sessions WHERE sessionid = ?",
+                        (id,)).fetchone()
+    conn.close()
+    if post is None:
+        return "error"
+    return post
+
 def check_username_taken(username):
     conn = get_db_connection()
     post = conn.execute("SELECT * FROM users WHERE lower(username) = ?",
@@ -148,8 +157,8 @@ def apisignup():
         randomCharacters = secrets.token_hex(512)
 
         conn = get_db_connection()
-        conn.execute("INSERT INTO sessions (session, id) VALUES (?, ?)",
-                     (randomCharacters, userID))
+        conn.execute("INSERT INTO sessions (session, id, device) VALUES (?, ?, ?)",
+                     (randomCharacters, userID, request.headers.get("user-agent")))
         conn.commit()
         conn.close()
 
@@ -178,8 +187,8 @@ def apilogin():
         randomCharacters = secrets.token_hex(512)
 
         conn = get_db_connection()
-        conn.execute("INSERT INTO sessions (session, id) VALUES (?, ?)",
-                     (randomCharacters, userID))
+        conn.execute("INSERT INTO sessions (session, id, device) VALUES (?, ?, ?)",
+                     (randomCharacters, userID, request.headers.get("user-agent")))
         conn.commit()
         conn.close()
 
@@ -374,6 +383,59 @@ def apideleteaccount():
 
         return {}, 200
 
+@app.route("/api/sessions/list", methods=("GET", "POST"))
+def apisessionslist():
+    if request.method == "POST":
+        data = request.get_json()
+        secretKey = data["secretKey"]
+
+        userCookie = get_session(secretKey)
+        user = get_user(userCookie["id"])
+
+        conn = get_db_connection()
+        sessions = conn.execute("SELECT * FROM sessions WHERE id = ? ORDER BY id DESC;", (user["id"],)).fetchall()
+        conn.close()
+
+        datatemplate = []
+
+        for x in sessions:
+            device = x["device"]
+            thisSession = False
+            if (x["session"] == secretKey):
+                thisSession = True
+            sessiontemplate = {
+                "id": x["sessionid"],
+                "thisSession": thisSession,
+                "device": device
+            }
+            datatemplate.append(sessiontemplate)
+
+        return datatemplate, 200
+
+@app.route("/api/sessions/remove", methods=("GET", "POST"))
+def apisessionsremove():
+    if request.method == "POST":
+        data = request.get_json()
+        secretKey = data["secretKey"]
+        sessionId = data["sessionId"]
+
+        userCookie = get_session(secretKey)
+        user = get_user(userCookie["id"])
+
+        session = get_session_from_sessionid(sessionId)
+
+        if (session != "error"):
+            if (user["id"] == session["id"]):
+                conn = get_db_connection()
+                conn.execute("DELETE FROM sessions WHERE sessionid = ?", (session["sessionid"],))
+                conn.commit()
+                conn.close()
+
+                return {}, 200
+            else:
+                return {}, 403
+        else:
+            return {}, 422
 
 @app.route("/listusers/<secretkey>", methods=("GET", "POST"))
 def listusers(secretkey):
@@ -396,6 +458,10 @@ def apilogout():
 @app.errorhandler(500)
 def burger(e):
     return {}, 500
+
+@app.errorhandler(404)
+def burger(e):
+    return render_template("error.html", errorCode=404, errorMessage="Page not found"), 404
 
 # Start server
 if __name__ == "__main__":

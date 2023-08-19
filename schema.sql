@@ -19,6 +19,8 @@ CREATE TABLE notes (
 );
 
 CREATE TABLE sessions (
-    session TEXT PRIMARY KEY NOT NULL,
-    id INTEGER NOT NULL
+    sessionid INTEGER PRIMARY KEY AUTOINCREMENT,
+    session TEXT NOT NULL,
+    id INTEGER NOT NULL,
+    device TEXT NOT NULL DEFAULT "?"
 );

@@ -273,6 +273,33 @@ body {
     margin-bottom: 10px;
 }
 
+.sessionDiv div {
+    background-color: #f4f4f4;
+    border-radius: 8px;
+    margin-bottom: 5px;
+    padding: 10px;
+    height: 35px;
+}
+.sessionDiv div p {
+    display: inline;
+    position: absolute;
+    transform: translateY(-7.5px);
+}
+.sessionDiv div button {
+    position: absolute;
+    border-radius: 99px;
+    right: 15px;
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+    transform: translateY(-2px);
+}
+.sessionDiv img {
+    display: inline;
+    filter: none;
+    height: 100%;
+}
+
 /* Sign up/log in div */
 
 .inoutdiv {

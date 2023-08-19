@@ -11,6 +11,14 @@ if (localStorage.getItem("DONOTSHARE-password") === null) {
 
 function formatBytes(a, b = 2) { if (!+a) return "0 Bytes"; const c = 0 > b ? 0 : b, d = Math.floor(Math.log(a) / Math.log(1000)); return `${parseFloat((a / Math.pow(1000, d)).toFixed(c))} ${["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"][d]}` }
 
+function truncateString(str, num) {
+    if (str.length > num) {
+        return str.slice(0, num) + "...";
+    } else {
+        return str;
+    }
+}
+
 let secretkey = localStorage.getItem("DONOTSHARE-secretkey")
 let password = localStorage.getItem("DONOTSHARE-password")
 
@@ -23,6 +31,10 @@ let closeErrorButton = document.getElementById("closeErrorButton")
 let cancelErrorButton = document.getElementById("cancelErrorButton")
 let errorInput = document.getElementById("errorInput")
 let exitThing = document.getElementById("exitThing")
+let exitSessionsThing = document.getElementById("exitSessionsThing")
+let sessionManagerButton = document.getElementById("sessionManagerButton")
+let sessionManagerDiv = document.getElementById("sessionManagerDiv")
+let sessionDiv = document.getElementById("sessionDiv")
 let deleteMyAccountButton = document.getElementById("deleteMyAccountButton")
 let storageThing = document.getElementById("storageThing")
 let storageProgressThing = document.getElementById("storageProgressThing")
@@ -45,6 +57,7 @@ if (/Android|iPhone/i.test(navigator.userAgent)) {
     notesBar.style.width = "calc(100% - 10px)"
     noteBox.readOnly = true
     noteBox.style.fontSize = "18px"
+    noteBox.classList.add("hidden")
 
     notesBar.addEventListener("touchstart", function (event) {
         touchstartX = event.changedTouches[0].screenX;
@@ -69,19 +82,25 @@ if (/Android|iPhone/i.test(navigator.userAgent)) {
     }, false);
 
     function handleGesture() {
-        if (touchendX > touchstartX) {
-            notesBar.style.width = "calc(100% - 30px)";
-            noteBox.style.width = "30px"
-            noteBox.readOnly = true
+        if (touchendX > touchstartX + 75) {
+            notesBar.style.width = "calc(100% - 10px)";
+            noteBox.style.width = "10px"
+            if (selectedNote != 0) {
+                noteBox.readOnly = true
+            }
             notesDiv.classList.remove("hidden")
+            noteBox.classList.add("hidden")
             newNote.classList.remove("hidden")
         }
 
-        if (touchendX < touchstartX) {
+        if (touchendX < touchstartX - 75) {
             noteBox.style.width = "calc(100% - 30px)";
-            notesBar.style.width = "30px"
-            noteBox.readOnly = false
+            notesBar.style.width = "10px"
+            if (selectedNote != 0) {
+                noteBox.readOnly = false
+            }
             notesDiv.classList.add("hidden")
+            noteBox.classList.remove("hidden")
             newNote.classList.add("hidden")
         }
     }
@@ -103,7 +122,6 @@ closeErrorButton.addEventListener("click", (event) => {
     errorDiv.classList.add("hidden")
     optionsCoverDiv.classList.add("hidden")
 });
-
 
 function displayPrompt(message, callback) {
     errorMessageThing.innerText = message
@@ -160,13 +178,22 @@ function updateUserInfo() {
         .then((response) => response)
         .then((response) => {
             async function doStuff() {
-                let responseData = await response.json()
-                usernameBox.innerText = responseData["username"]
-                usernameThing.innerText = "logged in as " + responseData["username"]
-                storageThing.innerText = "you've used " + formatBytes(responseData["storageused"]) + " out of " + formatBytes(responseData["storagemax"])
-                storageProgressThing.value = responseData["storageused"]
-                storageProgressThing.max = responseData["storagemax"]
-                noteCount = responseData["notecount"]
+                if (response.status == 500) {
+                    displayError("Something went wrong. Signing you out..")
+                    closeErrorButton.classList.add("hidden")
+                    usernameBox.innerText = ""
+                    setTimeout(function() {
+                        window.location.replace("/api/logout")
+                    }, 2500);
+                } else {
+                    let responseData = await response.json()
+                    usernameBox.innerText = responseData["username"]
+                    usernameThing.innerText = "logged in as " + responseData["username"]
+                    storageThing.innerText = "you've used " + formatBytes(responseData["storageused"]) + " out of " + formatBytes(responseData["storagemax"])
+                    storageProgressThing.value = responseData["storageused"]
+                    storageProgressThing.max = responseData["storagemax"]
+                    noteCount = responseData["notecount"]
+                }
             }
             doStuff()
         });
@@ -177,7 +204,7 @@ usernameBox.addEventListener("click", (event) => {
     updateUserInfo()
 });
 logOutButton.addEventListener("click", (event) => {
-    window.location.href = "/api/logout"
+    window.location.replace("/api/logout")
 });
 exitThing.addEventListener("click", (event) => {
     optionsDiv.classList.add("hidden")
@@ -203,6 +230,85 @@ deleteMyAccountButton.addEventListener("click", (event) => {
                 }
             })
     }
+});
+sessionManagerButton.addEventListener("click", (event) => {
+    optionsDiv.classList.add("hidden")
+    sessionManagerDiv.classList.remove("hidden")
+
+    fetch("/api/sessions/list", {
+        method: "POST",
+        body: JSON.stringify({
+            secretKey: secretkey
+        }),
+        headers: {
+            "Content-type": "application/json; charset=UTF-8"
+        }
+    })
+        .then((response) => response)
+        .then((response) => {
+            async function doStuff() {
+                let responseData = await response.json()
+                document.querySelectorAll(".burgerSession").forEach((el) => el.remove());
+                for (let i in responseData) {
+                    let sessionElement = document.createElement("div")
+                    let sessionText = document.createElement("p")
+                    let sessionImage = document.createElement("img")
+                    let sessionRemoveButton = document.createElement("button")
+                    sessionText.classList.add("w300")
+                    if (responseData[i]["thisSession"] == true) {
+                        sessionText.innerHTML = "<span style='background-color: #157efb; color: white; padding: 8px; border-radius: 8px; margin-right: 5px;'>current</span>" + truncateString(responseData[i]["device"], 18)
+                    } else {
+                        sessionText.innerHTML = truncateString(responseData[i]["device"], 27)
+                    }
+                    sessionText.title = responseData[i]["device"]
+                    sessionRemoveButton.innerText = "X"
+
+                    sessionImage.src = "/static/svg/device_other.svg"
+
+                    ua = responseData[i]["device"]
+
+                    if (ua.includes("NT") || ua.includes("Linux")) {
+                        sessionImage.src = "/static/svg/device_computer.svg"
+                    }
+                    if (ua.includes("iPhone" || ua.includes("Android"))) {
+                        sessionImage.src = "/static/svg/device_smartphone.svg"
+                    }
+
+                    sessionRemoveButton.addEventListener("click", (event) => {
+                        fetch("/api/sessions/remove", {
+                            method: "POST",
+                            body: JSON.stringify({
+                                secretKey: secretkey,
+                                sessionId: responseData[i]["id"]
+                            }),
+                            headers: {
+                                "Content-type": "application/json; charset=UTF-8"
+                            }
+                        })
+                            .then((response) => response)
+                            .then((response) => {
+                                if (responseData[i]["thisSession"] == true) {
+                                    window.location.replace("/api/logout")
+                                }
+                            });
+                        sessionElement.remove()
+                    });
+
+                    sessionElement.append(sessionImage)
+                    sessionElement.append(sessionText)
+                    sessionElement.append(sessionRemoveButton)
+
+                    sessionElement.classList.add("burgerSession")
+
+                    sessionDiv.append(sessionElement)
+                }
+            }
+            doStuff()
+        });
+});
+exitSessionsThing.addEventListener("click", (event) => {
+    optionsDiv.classList.remove("hidden")
+    sessionManagerDiv.classList.add("hidden")
 });
 
 updateUserInfo()
@@ -342,7 +448,6 @@ updateNotes()
 
 newNote.addEventListener("click", (event) => {
     let noteName = displayPrompt("note name? :3", burgerFunction)
-    //let noteName = prompt("note name? :3")
     function burgerFunction(noteName) {
         if (noteName != null) {
             let encryptedName = CryptoJS.AES.encrypt(noteName, password).toString();
@@ -410,7 +515,6 @@ function exportNotes() {
                     responseData[i]["content"] = originalContent
                 }
                 let jsonString = JSON.parse(JSON.stringify(responseData))
-                console.log(jsonString)
 
                 exportNotesButton.innerText = "export notes"
                 downloadObjectAsJson(jsonString, "data")
