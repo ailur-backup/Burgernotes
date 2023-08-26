@@ -10,6 +10,8 @@
     --exit-color: #e9e9e9;
     --session-color: #f4f4f4;
     --note-button: #ffffff;
+    --note-button-text-color: #ffffff;
+    --unselected-note-button-text-color: #000000;
 }
 
 p, h1, h2, h3, h4, h5, h6 {
@@ -112,7 +114,7 @@ body {
     margin: 7px;
     margin-bottom: 0;
     background-color: var(--note-button);
-    color: var(--text-color);
+    color: var(--unselected-note-button-text-color);
     border: none;
     border-radius: 8px;
 
@@ -148,7 +150,7 @@ body {
 .notesBar .selected {
     background-color: var(--theme-color) !important;
     border: none;
-    color: white
+    color: var(--note-button-text-color);
 }
 
 .notesBar .newNote {
