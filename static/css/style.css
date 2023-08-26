@@ -171,6 +171,7 @@ body {
     padding: 4px;
     border: none;
     font-size: 16px;
+    background-color: var(--editor);
     width: calc(100% - 180px - 7px - 6px);
     height: calc(100% - 50px - 6px - 8px);
     font-family: "Inter", sans-serif;
