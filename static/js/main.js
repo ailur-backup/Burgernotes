@@ -132,8 +132,10 @@ function displayPrompt(message, callback) {
     errorInput.value = ""
 
     closeErrorButton.addEventListener("click", (event) => {
-        callback(errorInput.value)
-        callback = undefined
+        if (callback) {
+            callback(errorInput.value)
+            callback = undefined
+        }
     });
     errorInput.addEventListener("keyup", (event) => {
         if (event.key == "Enter") {
