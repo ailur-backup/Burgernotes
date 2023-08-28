@@ -36,13 +36,17 @@ let cancelErrorButton = document.getElementById("cancelErrorButton")
 let errorInput = document.getElementById("errorInput")
 let exitThing = document.getElementById("exitThing")
 let exitSessionsThing = document.getElementById("exitSessionsThing")
+let exitMfaThing = document.getElementById("exitMfaThing")
 let sessionManagerButton = document.getElementById("sessionManagerButton")
 let sessionManagerDiv = document.getElementById("sessionManagerDiv")
 let sessionDiv = document.getElementById("sessionDiv")
+let mfaDiv = document.getElementById("mfaDiv")
+let mfaCheckbox = document.getElementById("mfaCheckbox")
 let deleteMyAccountButton = document.getElementById("deleteMyAccountButton")
 let storageThing = document.getElementById("storageThing")
 let storageProgressThing = document.getElementById("storageProgressThing")
 let usernameThing = document.getElementById("usernameThing")
+let passwordThing = document.getElementById("passwordThing")
 let logOutButton = document.getElementById("logOutButton")
 let notesBar = document.getElementById("notesBar")
 let notesDiv = document.getElementById("notesDiv")
@@ -194,7 +198,8 @@ function updateUserInfo() {
                 } else {
                     let responseData = await response.json()
                     usernameBox.innerText = responseData["username"]
-                    usernameThing.innerText = "logged in as " + responseData["username"]
+                    usernameThing.innerText = "username: " + responseData["username"]
+                    passwordThing.innerText = "password: *************"
                     storageThing.innerText = "you've used " + formatBytes(responseData["storageused"]) + " out of " + formatBytes(responseData["storagemax"])
                     storageProgressThing.value = responseData["storageused"]
                     storageProgressThing.max = responseData["storagemax"]
@@ -316,6 +321,17 @@ sessionManagerButton.addEventListener("click", (event) => {
 exitSessionsThing.addEventListener("click", (event) => {
     optionsDiv.classList.remove("hidden")
     sessionManagerDiv.classList.add("hidden")
+});
+mfaCheckbox.addEventListener("change", (event) => {
+    if (mfaCheckbox.checked === true) {
+        mfaCheckbox.checked = false
+        optionsDiv.classList.add("hidden")
+        mfaDiv.classList.remove("hidden")
+    }
+})
+exitMfaThing.addEventListener("click", (event) => {
+    optionsDiv.classList.remove("hidden")
+    mfaDiv.classList.add("hidden")
 });
 
 updateUserInfo()

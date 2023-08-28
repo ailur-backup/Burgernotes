@@ -31,6 +31,9 @@
             <button class="exit" id="exitThing">X</button>
             <h3 class="w300">your account</h3>
             <p id="usernameThing"></p>
+            <p id="passwordThing"></p>
+            <p style="display: inline">enable two-factor authentication: </p>
+            <input type="checkbox" id="mfaCheckbox" class="mfacheckbox">
             <div class="section"></div>
             <p>storage</p>
             <progress id="storageProgressThing" value="0" max="100"></progress><br>
@@ -48,6 +51,21 @@
             <p>manage your sessions</p>
             <div class="section"></div>
             <div class="sessionDiv" id="sessionDiv">
+            </div>
+        </div>
+        <div id="mfaDiv" class="optionsDiv hidden">
+            <button class="exit" id="exitMfaThing">X</button>
+            <h3 class="w300">enable 2FA</h3>
+            <img style="filter: none; width: 100%; height: 60px;" src="/static/svg/phonelink_lock.svg">
+            <br><br>
+            Two-factor authentication is coming soon!
+            <div class="hidden">
+                <p>Two-factor authentication adds an extra layer of security to your account.</p>
+                <p>Enter in this token in your authenticator app:</p>
+                <code></code>
+                <p>Enter in the 6 digit code from your authenticator app:</p>
+                <input style="margin-bottom: 0;" inputmode="numeric" id="errorInput" type="text"
+                    placeholder="6-digit code"><br></input>
             </div>
         </div>
         <div id="errorDiv" class="optionsDiv hidden">

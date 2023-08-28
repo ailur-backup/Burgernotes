@@ -111,12 +111,12 @@ body {
     overflow-y: scroll;
 }
 
-.notesBar button {
-    width: calc(100% - 7px - 7px - 3.5px);
+.notesBar .noteButton {
+    width: calc(100% - 5px - 5px);
     height: 35px;
     line-height: 0px;
     padding: 10px;
-    margin: 7px;
+    margin: 5px;
     margin-bottom: 0;
     background-color: var(--note-button);
     color: var(--unselected-note-button-text-color);
@@ -159,14 +159,19 @@ body {
 }
 
 .notesBar .newNote {
+    height: 41px;
+    line-height: 41px;
+    width: 100%;
+    text-align: left;
     background-color: rgba(0, 0, 0, 0);
-    transform: translateY(-35%);
-    padding-left: 0;
     border: none;
+    font-size: 16px;
+
+    margin-bottom: 5px;
 }
 
 .notesBar .newNote img {
-    height: 200%;
+    height: 32px;
     padding-right: 5px;
     transform: translateY(30%);
 }
@@ -246,10 +251,25 @@ body {
     border-width: 1px;
     border-radius: 8px;
 }
-
+.optionsDiv .mfacheckbox {
+    display: inline;
+    margin: 0;
+    margin-left: 5px;
+    margin-bottom: 12px;
+    padding: 0;
+    height: 17px;
+    width: 17px;
+}
 .optionsDiv input:focus {
     outline: 0;
     border-color: var(--theme-color);
+}
+
+.optionsDiv code {
+    padding: 7px;
+    font-size: 14px;
+    border-radius: 8px;
+    background-color: var(--session-color);
 }
 
 .optionsDiv progress {
