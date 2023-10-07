@@ -12,6 +12,55 @@
     --note-button: #ffffff;
     --note-button-text-color: #ffffff;
     --unselected-note-button-text-color: #000000;
+    --option-background: #ffffff;
+    --invert: 100%
+}
+
+/* dark mode */
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bar: #2d2f31;
+        --editor: #202124;
+        --text-color: #ffffff;
+        --border-color: #393b3d;
+        --theme-color: #157efb;
+        --theme-text-color: #ffffff;
+        --exit-color: #454649;
+        --session-color: #2d2f31;
+        --note-button: #202124;
+        --note-button-text-color: #ffffff;
+        --unselected-note-button-text-color: #ffffff;
+        --option-background: #202124;
+        --invert: 100%
+    }
+    .startDiv p {
+        color: white !important;
+    }
+    .topBar p {
+        color: white !important;
+    }
+    .newNote {
+        color: white !important;
+    }
+    .newNote img {
+        filter: invert(100%)
+    }
+    #errorDiv p {
+        color: white !important;
+    }
+    .optionsCoverDiv p {
+        color: white !important;
+    }
+    .burgerSession img {
+        filter: invert(100%) !important
+    }
+    .feature h3, p {
+        color: black !important;
+    }
+    .links a {
+        color: white !important;
+    }
 }
 
 p, h1, h2, h3, h4, h5, h6 {
@@ -184,6 +233,7 @@ body {
     padding: 4px;
     border: none;
     font-size: 16px;
+    color: var(--text-color);
     background-color: var(--editor);
     width: calc(100% - 180px - 7px - 6px);
     height: calc(100% - 50px - 6px - 8px);
@@ -209,7 +259,7 @@ body {
     transform: translate(-50%, -50%);
     width: 300px;
     position: fixed;
-    background-color: white;
+    background-color: var(--option-background);
     padding: 10px;
     color: var(--text-color);
     border-radius: 8px;
@@ -302,7 +352,7 @@ body {
 .optionsDiv img {
     height: 18px;
     padding-right: 5px;
-    filter: invert(100%)
+    filter: invert(var(--invert))
 }
 
 .optionsDiv .section {
@@ -489,107 +539,4 @@ body {
 
 .links a:hover {
     text-decoration: dashed;
-}
-
-/* dark theme, modified */
-
-@media (prefers-color-scheme: dark) {
-    :root {
-        --gray-950: #030712;
-        --gray-900: #111827;
-        --gray-800: #1f2937;
-        --gray-700: #374151;
-        --gray-600: #4b5563;
-        --gray-500: #6b7280;
-        --gray-400: #9ca3af;
-        --gray-300: #d1d5db;
-        --gray-200: #e5e7eb;
-        --gray-100: #f3f4f6;
-        --gray-50: #f9fafb;
-    }
-
-    body {
-        color: white;
-        background-color: #202020;
-    }
-
-    .topBar {
-        background-color: #252525;
-        border-color: #414141;
-    }
-
-    .notesBar {
-        background-color: #252525;
-        border: solid;
-        border-width: 0px;
-        border-right-width: 1px;
-        border-color: #414141;
-    }
-
-    .noteBox {
-        background-color: #202020;
-        color: white;
-    }
-
-    .notesBar button {
-        color: white;
-    }
-
-    .notesBar .newNote img {
-        filter: invert(1);
-    }
-
-    .notesBar button {
-        background-color: #202020;
-        border: none;
-    }
-
-    .notesBar .selected {
-        border-color: #0d51a1 !important;
-    }
-
-    .optionsDiv {
-        background-color: #252525;
-        color: white;
-        border-color: #414141;
-    }
-
-    .optionsDiv .exit {
-        background-color: #424242;
-        color: white;
-    }
-
-    .mainDiv .feature {
-        background-color: #141414;
-        border: solid;
-        border-width: 1px;
-        border-color: #303030;
-    }
-
-    .inoutdiv {
-        border: 1px solid var(--gray-700);
-        border-radius: 8px;
-        background-color: var(--gray-800);
-        box-shadow: none;
-    }
-
-    .inoutdiv input {
-        border: solid 1px var(--gray-600);
-        background-color: var(--gray-700);
-        color: white;
-    }
-
-    .inoutdiv button {
-        background-color: var(--gray-700);
-        color: white;
-        border: 1px solid var(--gray-600);
-    }
-
-    .notesBar .loadingStuff {
-        background:
-            linear-gradient(0.25turn, transparent, #3b3b3b, transparent),
-            linear-gradient(#2e2e2e, #2e2e2e),
-            radial-gradient(38px circle at 19px 19px, #202020 50%, transparent 51%),
-            linear-gradient(#2e2e2e, #2e2e2e);
-    }
 }
