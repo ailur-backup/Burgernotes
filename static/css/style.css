@@ -61,6 +61,16 @@
     .links a {
         color: white !important;
     }
+    .inoutdiv p {
+        color: white !important;
+    }
+    .inoutdiv a {
+        color: #969696 !important;
+    }
+    .inoutdiv input {
+        color: white;
+        background-color: #202124;
+    }
 }
 
 p, h1, h2, h3, h4, h5, h6 {
@@ -363,7 +373,13 @@ body {
     margin-bottom: 10px;
 }
 
+.sessionDiv {
+    max-height: 255px;
+    overflow-y: auto;
+}
+
 .sessionDiv div {
+    position: relative;
     background-color: var(--session-color);
     border-radius: 8px;
     margin-bottom: 5px;
@@ -401,7 +417,7 @@ body {
 }
 
 .inoutdiv input {
-    width: calc(100% - 20px);
+    width: calc(100% - 120px);
     height: 30px;
     margin-bottom: 10px;
     padding-left: 10px;
@@ -417,6 +433,7 @@ body {
     background-color: var(--theme-color);
     color: white;
     padding: 10px;
+    margin-right: 5px;
     padding-left: 20px;
     padding-right: 20px;
 
@@ -432,7 +449,7 @@ body {
 }
 
 .hidden {
-    display: none;
+    display: none !important;
 }
 
 .w100 {

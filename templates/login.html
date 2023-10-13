@@ -14,13 +14,13 @@
 <body>
     <div class="inoutdiv">
         <h2 class="w300">log in</h2>
-        <p>log in to your burgernotes account!</p>
         <p id="statusBox"></p>
-        <input id="usernameBox" type="text" placeholder="Username">
-        <input id="passwordBox" type="password" placeholder="Password">
-        <button id="signupButton">log in</button><br><br>
+        <span id="inputNameBox" style="margin-right: 10px;"></span><input id="usernameBox" class="hidden" type="text" placeholder="Enter your username">
+        <input id="passwordBox" class="hidden" type="password" placeholder="Enter your password">
+        <button id="signupButton">next</button>
+        <button id="backButton" class="hidden">back</button><br><br>
         <p>don't have an account? if so, <a href="/signup">create one here!</a></p>
     </div>
-    
+
     <script type="text/javascript" src="/static/js/login.js"></script>
 </body>
