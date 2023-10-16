@@ -438,6 +438,19 @@ def apisessionsremove():
         else:
             return {}, 422
 
+
+@app.route("/api/submitfeedback", methods=("GET", "POST"))
+def apisubmitfeedback():
+    if request.method == "POST":
+        data = request.get_json()
+        secretKey = data["secretKey"]
+        feedback = data["feedback"]
+
+        print("feedback: " + feedback)
+
+        return {}, 200
+
+
 @app.route("/listusers/<secretkey>", methods=("GET", "POST"))
 def listusers(secretkey):
     if secretkey == SECRET_KEY:

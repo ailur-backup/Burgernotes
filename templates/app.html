@@ -18,6 +18,15 @@
         <p tabindex="0" id="usernameBox" class="usernameBox"></p>
     </div>
 
+    <div class="bottomBar">
+        <button id="removeBox" class="removeButton"></button>
+        <button id="wordCountBox">0 words</button>
+        <button id="textMinusBox" class="right">-</button>
+        <button id="textSizeBox" class="right">16px</button>
+        <button id="textPlusBox" class="right">+</button>
+        <button id="sendFeedbackButton" class="right">Send feedback</button>
+    </div>
+
     <div id="notesBar" class="notesBar">
         <button id="newNote" class="newNote"><img id="newNoteImage" draggable="false" alt=""
                 src="/static/svg/add.svg">new note</button>
@@ -70,7 +79,7 @@
         </div>
         <div id="errorDiv" class="optionsDiv hidden">
             <p id="errorMessageThing"></p>
-            <input class="hidden" id="errorInput" type="text" placeholder="e.g. shopping list"><br></input>
+            <input class="hidden" id="errorInput" type="text" placeholder=""><br></input>
             <button class="normalButton" id="closeErrorButton">OK</button>
             <button class="normalButton hidden" id="cancelErrorButton">Cancel</button>
         </div>

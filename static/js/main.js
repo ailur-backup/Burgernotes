@@ -131,9 +131,10 @@ closeErrorButton.addEventListener("click", (event) => {
     optionsCoverDiv.classList.add("hidden")
 });
 
-function displayPrompt(message, callback) {
+function displayPrompt(message, placeholdertext, callback) {
     errorMessageThing.innerText = message
     errorInput.value = ""
+    errorInput.placeholder = placeholdertext
 
     closeErrorButton.addEventListener("click", (event) => {
         if (callback) {
@@ -174,6 +175,29 @@ closeErrorButton.addEventListener("click", (event) => {
     errorInput.classList.add("hidden")
     cancelErrorButton.classList.add("hidden")
 });
+
+function updateFont() {
+    let currentFontSize = localStorage.getItem("SETTING-fontsize")
+    noteBox.style.fontSize = currentFontSize + "px"
+    textSizeBox.innerText = currentFontSize + "px"
+}
+
+if (localStorage.getItem("SETTING-fontsize") === null) {
+    localStorage.setItem("SETTING-fontsize", "16")
+    updateFont()
+} else {
+    updateFont()
+}
+
+textPlusBox.addEventListener("click", (event) => {
+    localStorage.setItem("SETTING-fontsize", String(Number(localStorage.getItem("SETTING-fontsize")) + Number(1)))
+    updateFont()
+});
+textMinusBox.addEventListener("click", (event) => {
+    localStorage.setItem("SETTING-fontsize", String(Number(localStorage.getItem("SETTING-fontsize")) - Number(1)))
+    updateFont()
+});
+
 
 function updateUserInfo() {
     fetch("/api/userinfo", {
@@ -238,7 +262,7 @@ deleteMyAccountButton.addEventListener("click", (event) => {
                 if (response.status == 200) {
                     window.location.href = "/api/logout"
                 } else {
-                    displayError("failed to delete account (" + String(response.status) + ")")
+                    displayError("failed to delete account (HTTP error code " + response.status + ")")
                 }
             })
     }
@@ -336,6 +360,14 @@ exitMfaThing.addEventListener("click", (event) => {
 
 updateUserInfo()
 
+function updateWordCount() {
+    let wordCount = noteBox.value.split(" ").length
+    if (wordCount == 1) {
+        wordCount = 0
+    }
+    wordCountBox.innerText = wordCount + " words"
+}
+
 function selectNote(nameithink) {
     document.querySelectorAll(".noteButton").forEach((el) => el.classList.remove("selected"));
     let thingArray = Array.from(document.querySelectorAll(".noteButton")).find(el => el.id == nameithink);
@@ -370,8 +402,10 @@ function selectNote(nameithink) {
                 let originalText = bytes.toString(CryptoJS.enc.Utf8);
 
                 noteBox.value = originalText
+                updateWordCount()
 
                 noteBox.addEventListener("input", (event) => {
+                    updateWordCount()
                     clearTimeout(timer);
                     timer = setTimeout(() => {
                         let encryptedText = CryptoJS.AES.encrypt(noteBox.value, password).toString();
@@ -424,6 +458,7 @@ function updateNotes() {
                 noteBox.placeholder = ""
                 noteBox.value = ""
                 clearTimeout(timer)
+                updateWordCount()
 
                 let responseData = await response.json()
                 for (let i in responseData) {
@@ -470,7 +505,7 @@ function updateNotes() {
 updateNotes()
 
 newNote.addEventListener("click", (event) => {
-    let noteName = displayPrompt("note name? :3", burgerFunction)
+    let noteName = displayPrompt("note name? :3", "e.g. shopping list", burgerFunction)
     function burgerFunction(noteName) {
         if (noteName != null) {
             let encryptedName = CryptoJS.AES.encrypt(noteName, password).toString();
@@ -487,11 +522,10 @@ newNote.addEventListener("click", (event) => {
                 .catch((error) => {
                     displayError("failed to create new note, please try again later")
                 })
-                .then((response) => response)
                 .then((response) => {
                     if (response.status !== 200) {
                         updateNotes()
-                        displayError("something went wrong while creating note")
+                        displayError("failed to create new note (HTTP error code " + response.status + ")")
                     } else {
                         updateNotes()
                     }
@@ -552,4 +586,56 @@ function exportNotes() {
 exportNotesButton.addEventListener("click", (event) => {
     exportNotesButton.innerText = "downloading.."
     exportNotes()
+});
+
+sendFeedbackButton.addEventListener("click", (event) => {
+    let noteName = displayPrompt("Feedback:", "Write your feedback here. Don't include personal info.", burgerFunction)
+    function burgerFunction(feedbackText) {
+        if (feedbackText != null) {
+            fetch("/api/submitfeedback", {
+                method: "POST",
+                body: JSON.stringify({
+                    secretKey: secretkey,
+                    feedback: feedbackText
+                }),
+                headers: {
+                    "Content-type": "application/json; charset=UTF-8"
+                }
+            })
+                .catch((error) => {
+                    displayError("failed to submit feedback, please try again later")
+                })
+                .then((response) => {
+                    if (response.status == 200) {
+                        displayError("Thank you for submitting feedback!")
+                    } else {
+                        displayError("failed to submit feedback (HTTP error code " + response.status + ")")
+                    }
+                });
+        };
+    }
+});
+
+removeBox.addEventListener("click", (event) => {
+    if (selectedNote == 0) {
+        displayError("you need to select a note first!")
+    } else {
+        fetch("/api/removenote", {
+            method: "POST",
+            body: JSON.stringify({
+                secretKey: secretkey,
+                noteId: selectedNote
+            }),
+            headers: {
+                "Content-type": "application/json; charset=UTF-8"
+            }
+        })
+            .then((response) => response)
+            .then((response) => {
+                updateNotes()
+            })
+            .catch((error) => {
+                displayError("something went wrong! please try again later")
+            })
+    }
 });

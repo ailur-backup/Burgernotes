@@ -13,7 +13,8 @@
     --note-button-text-color: #ffffff;
     --unselected-note-button-text-color: #000000;
     --option-background: #ffffff;
-    --invert: 100%
+    --invert: 100%;
+    --bottomBarHover: #e4e4e4;
 }
 
 /* dark mode */
@@ -32,48 +33,68 @@
         --note-button-text-color: #ffffff;
         --unselected-note-button-text-color: #ffffff;
         --option-background: #202124;
-        --invert: 100%
+        --invert: 100%;
+        --bottomBarHover: #e4e4e4;
     }
+
     .startDiv p {
         color: white !important;
     }
+
     .topBar p {
         color: white !important;
     }
+
     .newNote {
         color: white !important;
     }
+
     .newNote img {
         filter: invert(100%)
     }
+
     #errorDiv p {
         color: white !important;
     }
+
     .optionsCoverDiv p {
         color: white !important;
     }
+
     .burgerSession img {
         filter: invert(100%) !important
     }
-    .feature h3, p {
+
+    .feature h3,
+    p {
         color: black !important;
     }
+
     .links a {
         color: white !important;
     }
+
     .inoutdiv p {
         color: white !important;
     }
+
     .inoutdiv a {
         color: #969696 !important;
     }
+
     .inoutdiv input {
         color: white;
         background-color: #202124;
     }
 }
 
-p, h1, h2, h3, h4, h5, h6 {
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
     color: var(--text-color);
 }
 
@@ -95,6 +116,48 @@ body {
     border-color: var(--border-color);
     border-width: 0px;
     border-bottom-width: 1px;
+}
+
+.bottomBar {
+    position: fixed;
+    width: 100%;
+    height: 29px;
+    bottom: 0;
+
+    background-color: var(--bar);
+
+    border: solid;
+    border-color: var(--border-color);
+    border-width: 0px;
+    border-top-width: 1px;
+}
+
+.bottomBar button {
+    background-color: rgba(0, 0, 0, 0);
+    color: var(--text-color);
+    height: 100%;
+    border: none;
+    font-size: 14px;
+    padding-left: 7.5px;
+    padding-right: 7.5px;
+}
+
+.bottomBar .removeButton {
+    padding-left: 17.5px;
+    padding-right: 17.5px;
+    transform: translateY(-5px);
+    background-image: url("/static/svg/delete.svg");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 55%;
+}
+
+.bottomBar button:hover {
+    background-color: var(--bottomBarHover);
+}
+
+.bottomBar .right {
+    float: right;
 }
 
 .burgerDropdown {
@@ -140,7 +203,6 @@ body {
 
 .topBar .logo {
     padding-left: 12px;
-    cursor: pointer;
 }
 
 .topBar .usernameBox {
@@ -153,8 +215,8 @@ body {
 .notesBar {
     position: fixed;
     width: 180px;
-    bottom: 0;
-    height: calc(100% - 50px - 1px);
+    top: 50px;
+    height: calc(100% - 50px - 30px - 1px);
 
     background-color: var(--bar);
 
@@ -189,6 +251,7 @@ body {
     font-size: 15px;
 
     text-align: left;
+    cursor: pointer;
 }
 
 .notesBar .loadingStuff {
@@ -227,6 +290,7 @@ body {
     font-size: 16px;
 
     margin-bottom: 5px;
+    cursor: pointer;
 }
 
 .notesBar .newNote img {
@@ -239,14 +303,14 @@ body {
     resize: none;
     position: fixed;
     right: 0;
-    bottom: 0;
+    top: 55px;
     padding: 4px;
     border: none;
     font-size: 16px;
     color: var(--text-color);
     background-color: var(--editor);
     width: calc(100% - 180px - 7px - 6px);
-    height: calc(100% - 50px - 6px - 8px);
+    height: calc(100% - 50px - 6px - 8px - 30px);
     font-family: "Inter", sans-serif;
 }
 
@@ -288,6 +352,7 @@ body {
     text-decoration: none;
     background-color: var(--theme-color);
     border-radius: 8px;
+    cursor: pointer;
 }
 
 .optionsDiv .normalButton {
@@ -311,6 +376,7 @@ body {
     border-width: 1px;
     border-radius: 8px;
 }
+
 .optionsDiv .mfacheckbox {
     display: inline;
     margin: 0;
@@ -320,6 +386,7 @@ body {
     height: 17px;
     width: 17px;
 }
+
 .optionsDiv input:focus {
     outline: 0;
     border-color: var(--theme-color);
