@@ -588,34 +588,6 @@ exportNotesButton.addEventListener("click", (event) => {
     exportNotes()
 });
 
-sendFeedbackButton.addEventListener("click", (event) => {
-    let noteName = displayPrompt("Feedback:", "Write your feedback here. Don't include personal info.", burgerFunction)
-    function burgerFunction(feedbackText) {
-        if (feedbackText != null) {
-            fetch("/api/submitfeedback", {
-                method: "POST",
-                body: JSON.stringify({
-                    secretKey: secretkey,
-                    feedback: feedbackText
-                }),
-                headers: {
-                    "Content-type": "application/json; charset=UTF-8"
-                }
-            })
-                .catch((error) => {
-                    displayError("failed to submit feedback, please try again later")
-                })
-                .then((response) => {
-                    if (response.status == 200) {
-                        displayError("Thank you for submitting feedback!")
-                    } else {
-                        displayError("failed to submit feedback (HTTP error code " + response.status + ")")
-                    }
-                });
-        };
-    }
-});
-
 removeBox.addEventListener("click", (event) => {
     if (selectedNote == 0) {
         displayError("you need to select a note first!")
