@@ -345,7 +345,8 @@ body {
     padding: 10px;
     color: var(--text-color);
     border-radius: 8px;
-    min-width: 338.5px
+    min-width: 338.5px;
+    z-index: 3;
 }
 
 .optionsDiv button {
