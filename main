@@ -122,8 +122,6 @@ def privacy():
 @app.route("/api/signup", methods=("GET", "POST"))
 def apisignup():
     if request.method == "POST":
-        return {}, 500
-
         data = request.get_json()
         username = data["username"]
         password = data["password"]
