@@ -67,9 +67,11 @@
         .then((response) => {
             async function doStuff() {
                 let responseData = await response.json()
-                let youThing = document.getElementById("youThing")
-                youThing.classList.remove("hidden")
-                youThing.innerText = "You, " + responseData["username"] + ", for using Burgernotes!"
+                if (response.status == 200) {
+                    let youThing = document.getElementById("youThing")
+                    youThing.classList.remove("hidden")
+                    youThing.innerText = "You, " + responseData["username"] + ", for using Burgernotes!"
+                }
             }
             doStuff()
         })
