@@ -1,11 +1,11 @@
 if (localStorage.getItem("DONOTSHARE-secretkey") !== null) {
     window.location.replace("/app")
-    document.body.innerHTML = "Redirecting.."
+    document.body.innerHTML = "Redirecting..."
     throw new Error();
 }
 if (localStorage.getItem("DONOTSHARE-password") !== null) {
     window.location.replace("/app")
-    document.body.innerHTML = "Redirecting.."
+    document.body.innerHTML = "Redirecting..."
     throw new Error();
 }
 
@@ -17,7 +17,7 @@ let inputNameBox = document.getElementById("inputNameBox")
 let backButton = document.getElementById("backButton")
 
 usernameBox.classList.remove("hidden")
-inputNameBox.innerText = "username:"
+inputNameBox.innerText = "Username:"
 
 let currentInputType = 0
 
@@ -26,14 +26,14 @@ function showInput(inputType) {
         usernameBox.classList.remove("hidden")
         passwordBox.classList.add("hidden")
         backButton.classList.add("hidden")
-        inputNameBox.innerText = "username:"
-        statusBox.innerText = "log in to your burgernotes account!"
+        inputNameBox.innerText = "Username:"
+        statusBox.innerText = "Login to your PageBurger account!"
         currentInputType = 0
     } else if (inputType == 1) {
         usernameBox.classList.add("hidden")
         passwordBox.classList.remove("hidden")
         backButton.classList.remove("hidden")
-        inputNameBox.innerText = "password:"
+        inputNameBox.innerText = "Password:"
         currentInputType = 1
     } else if (inputType == 2) {
         usernameBox.classList.add("hidden")
@@ -41,7 +41,7 @@ function showInput(inputType) {
         signupButton.classList.add("hidden")
         backButton.classList.add("hidden")
         inputNameBox.classList.add("hidden")
-        inputNameBox.innerText = "password:"
+        inputNameBox.innerText = "Password:"
         currentInputType = 2
     }
 }
@@ -68,10 +68,10 @@ function showElements(yesorno) {
 signupButton.addEventListener("click", (event) => {
     if (passwordBox.classList.contains("hidden")) {
         if (usernameBox.value == "") {
-            statusBox.innerText = "username required"
+            statusBox.innerText = "A username is required!"
             return
         } else {
-            statusBox.innerText = "welcome back, " + usernameBox.value + "!"
+            statusBox.innerText = "Welcome back, " + usernameBox.value + "!"
         }
         showInput(1)
     } else {
@@ -80,13 +80,13 @@ signupButton.addEventListener("click", (event) => {
             let password = passwordBox.value
 
             if (password == "") {
-                statusBox.innerText = "password required"
+                statusBox.innerText = "A password is required!"
                 return
             }
 
             showInput(2)
             showElements(true)
-            statusBox.innerText = "signing in.."
+            statusBox.innerText = "Signing in..."
 
             async function hashpass(pass) {
                 const key = await hashwasm.argon2id({
@@ -122,12 +122,12 @@ signupButton.addEventListener("click", (event) => {
                             window.location.href = "/app"
                         }
                         else if (response.status == 401) {
-                            statusBox.innerText = "wrong username or password :("
+                            statusBox.innerText = "Wrong username or password..."
                             showInput(1)
                             showElements(true)
                         }
                         else {
-                            statusBox.innerText = "something went wrong! (error code: " + response.status + ")"
+                            statusBox.innerText = "Something went wrong! (error code: " + response.status + ")"
                             showInput(1)
                             showElements(true)
                         }

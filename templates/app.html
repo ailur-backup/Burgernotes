@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>burgernotes</title>
+    <title>PageBurger</title>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -14,7 +14,7 @@
 
 <body>
     <div class="topBar">
-        <p tabindex="0" class="logo" id="burgerButton">burgernotes</p>
+        <p tabindex="0" class="logo" id="burgerButton">PageBurger</p>
         <p tabindex="0" id="usernameBox" class="usernameBox"></p>
     </div>
 
@@ -28,7 +28,7 @@
 
     <div id="notesBar" class="notesBar">
         <button id="newNote" class="newNote"><img id="newNoteImage" draggable="false" alt=""
-                src="/static/svg/add.svg">new note</button>
+                src="/static/svg/add.svg">New note</button>
         <div id="notesDiv" class="notesDiv">
             <button class="loadingStuff" id="loadingStuff"></button>
         </div>
@@ -37,49 +37,33 @@
     <div id="optionsCoverDiv" class="optionsCoverDiv hidden">
         <div id="optionsDiv" class="optionsDiv hidden">
             <button class="exit" id="exitThing">X</button>
-            <h3 class="w300">your account</h3>
+            <h3 class="w300">Your account</h3>
             <p id="usernameThing"></p>
             <p id="passwordThing"></p>
-            <p style="display: inline">enable two-factor authentication: </p>
-            <input type="checkbox" id="mfaCheckbox" class="mfacheckbox">
             <div class="section"></div>
-            <p>storage</p>
+            <p>Storage</p>
             <progress id="storageProgressThing" value="0" max="100"></progress><br>
             <p id="storageThing"></p>
             <div class="section"></div>
-            <p>account managment</p>
-            <button id="deleteMyAccountButton"><img src="/static/svg/delete_forever.svg">delete my account</button>
-            <button id="exportNotesButton"><img src="/static/svg/download.svg">export notes</button>
-            <button id="sessionManagerButton"><img src="/static/svg/list.svg">session manager</button>
-            <button class="lastButton" id="logOutButton"><img src="/static/svg/logout.svg">log out</button>
+            <p>Account managment</p>
+            <button id="deleteMyAccountButton"><img src="/static/svg/delete_forever.svg">Delete my account</button>
+            <button id="exportNotesButton"><img src="/static/svg/download.svg">Export notes</button>
+            <button id="sessionManagerButton"><img src="/static/svg/list.svg">Session manager</button>
+            <button class="lastButton" id="logOutButton"><img src="/static/svg/logout.svg">Log out</button>
         </div>
         <div id="sessionManagerDiv" class="optionsDiv hidden">
             <button class="exit" id="exitSessionsThing">X</button>
-            <h3 class="w300">session manager</h3>
-            <p>manage your sessions</p>
+            <h3 class="w300">Session manager</h3>
+            <p>Manage your sessions</p>
             <div class="section"></div>
             <div class="sessionDiv" id="sessionDiv">
             </div>
         </div>
-        <div id="mfaDiv" class="optionsDiv hidden">
-            <button class="exit" id="exitMfaThing">X</button>
-            <h3 class="w300">enable 2FA</h3>
-            <img style="filter: none; width: 100%; height: 60px;" src="/static/svg/phonelink_lock.svg">
-            <br><br>
-            Two-factor authentication is coming soon!
-            <div class="hidden">
-                <p>Two-factor authentication adds an extra layer of security to your account.</p>
-                <p>Enter in this token in your authenticator app:</p>
-                <code></code>
-                <p>Enter in the 6 digit code from your authenticator app:</p>
-                <input style="margin-bottom: 0;" inputmode="numeric" id="codeInput" type="text"
-                    placeholder="6-digit code"><br></input>
-            </div>
         </div>
         <div id="errorDiv" class="optionsDiv hidden">
             <p id="errorMessageThing"></p>
             <input class="hidden" id="errorInput" type="text" placeholder=""><br></input>
-            <button class="normalButton" id="closeErrorButton">OK</button>
+            <button class="normalButton" id="closeErrorButton">Ok</button>
             <button class="normalButton hidden" id="cancelErrorButton">Cancel</button>
         </div>
     </div>

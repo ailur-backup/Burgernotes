@@ -118,10 +118,6 @@ def login():
 def privacy():
     return render_template("privacy.html")
 
-@app.route("/shutdownfaq")
-def shutdown():
-    return send_from_directory("templates", "shutdown.html")
-
 # API
 @app.route("/api/signup", methods=("GET", "POST"))
 def apisignup():

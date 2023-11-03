@@ -1,11 +1,11 @@
 if (localStorage.getItem("DONOTSHARE-secretkey") !== null) {
     window.location.replace("/app")
-    document.body.innerHTML = "Redirecting.."
+    document.body.innerHTML = "Redirecting..."
     throw new Error();
 }
 if (localStorage.getItem("DONOTSHARE-password") !== null) {
     window.location.replace("/app")
-    document.body.innerHTML = "Redirecting.."
+    document.body.innerHTML = "Redirecting..."
     throw new Error();
 }
 
@@ -33,24 +33,24 @@ signupButton.addEventListener("click", (event) => {
         let password = passwordBox.value
 
         if (username == "") {
-            statusBox.innerText = "username required"
+            statusBox.innerText = "A username is required!"
             return
         }
         if ((username).length > 20) {
-            statusBox.innerText = "username cannot be more than 20 characters"
+            statusBox.innerText = "Username cannot be more than 20 characters!"
             return
         }
         if (password == "") {
-            statusBox.innerText = "password required"
+            statusBox.innerText = "A password is required!"
             return
         }
-        if ((password).length < 14) {
-            statusBox.innerText = "14 characters required"
+        if ((password).length < 8) {
+            statusBox.innerText = "8 or more characters are required!"
             return
         }
 
         showElements(false)
-        statusBox.innerText = "creating account, please hold on.."
+        statusBox.innerText = "Creating account, please hold on..."
 
         async function hashpass(pass) {
             const key = await hashwasm.argon2id({
@@ -88,11 +88,11 @@ signupButton.addEventListener("click", (event) => {
                         window.location.href = "/app"
                     }
                     else if (response.status == 409) {
-                        statusBox.innerText = "username already taken!"
+                        statusBox.innerText = "Username already taken!"
                         showElements(true)
                     }
                     else {
-                        statusBox.innerText = "something went wrong! (error code: " + respStatus + ")"
+                        statusBox.innerText = "Something went wrong! (error code: " + respStatus + ")"
                         showElements(true)
                     }
                 }

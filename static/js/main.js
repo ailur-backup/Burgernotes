@@ -1,11 +1,11 @@
 if (localStorage.getItem("DONOTSHARE-secretkey") === null) {
     window.location.replace("/login")
-    document.body.innerHTML = "Redirecting.."
+    document.body.innerHTML = "Redirecting..."
     throw new Error();
 }
 if (localStorage.getItem("DONOTSHARE-password") === null) {
     window.location.replace("/login")
-    document.body.innerHTML = "Redirecting.."
+    document.body.innerHTML = "Redirecting..."
     throw new Error();
 }
 
@@ -36,17 +36,14 @@ let cancelErrorButton = document.getElementById("cancelErrorButton")
 let errorInput = document.getElementById("errorInput")
 let exitThing = document.getElementById("exitThing")
 let exitSessionsThing = document.getElementById("exitSessionsThing")
-let exitMfaThing = document.getElementById("exitMfaThing")
 let sessionManagerButton = document.getElementById("sessionManagerButton")
 let sessionManagerDiv = document.getElementById("sessionManagerDiv")
 let sessionDiv = document.getElementById("sessionDiv")
 let mfaDiv = document.getElementById("mfaDiv")
-let mfaCheckbox = document.getElementById("mfaCheckbox")
 let deleteMyAccountButton = document.getElementById("deleteMyAccountButton")
 let storageThing = document.getElementById("storageThing")
 let storageProgressThing = document.getElementById("storageProgressThing")
 let usernameThing = document.getElementById("usernameThing")
-let passwordThing = document.getElementById("passwordThing")
 let logOutButton = document.getElementById("logOutButton")
 let notesBar = document.getElementById("notesBar")
 let notesDiv = document.getElementById("notesDiv")
@@ -213,7 +210,7 @@ function updateUserInfo() {
         .then((response) => {
             async function doStuff() {
                 if (response.status == 500) {
-                    displayError("Something went wrong. Signing you out..")
+                    displayError("Something went wrong! Signing you out..")
                     closeErrorButton.classList.add("hidden")
                     usernameBox.innerText = ""
                     setTimeout(function () {
@@ -222,9 +219,8 @@ function updateUserInfo() {
                 } else {
                     let responseData = await response.json()
                     usernameBox.innerText = responseData["username"]
-                    usernameThing.innerText = "username: " + responseData["username"]
-                    passwordThing.innerText = "password: *************"
-                    storageThing.innerText = "you've used " + formatBytes(responseData["storageused"]) + " out of " + formatBytes(responseData["storagemax"])
+                    usernameThing.innerText = "Username: " + responseData["username"]
+                    storageThing.innerText = "You've used " + formatBytes(responseData["storageused"]) + " out of " + formatBytes(responseData["storagemax"])
                     storageProgressThing.value = responseData["storageused"]
                     storageProgressThing.max = responseData["storagemax"]
                     noteCount = responseData["notecount"]
@@ -247,7 +243,7 @@ exitThing.addEventListener("click", (event) => {
     optionsCoverDiv.classList.add("hidden")
 });
 deleteMyAccountButton.addEventListener("click", (event) => {
-    if (confirm("are you REALLY sure that you want to delete your account? there's no going back.") == true) {
+    if (confirm("Are you REALLY sure that you want to delete your account? There's no going back!") == true) {
         fetch("/api/deleteaccount", {
             method: "POST",
             body: JSON.stringify({
@@ -262,7 +258,7 @@ deleteMyAccountButton.addEventListener("click", (event) => {
                 if (response.status == 200) {
                     window.location.href = "/api/logout"
                 } else {
-                    displayError("failed to delete account (HTTP error code " + response.status + ")")
+                    displayError("Failed to delete account (HTTP error code " + response.status + ")")
                 }
             })
     }
@@ -346,17 +342,6 @@ exitSessionsThing.addEventListener("click", (event) => {
     optionsDiv.classList.remove("hidden")
     sessionManagerDiv.classList.add("hidden")
 });
-mfaCheckbox.addEventListener("change", (event) => {
-    if (mfaCheckbox.checked === true) {
-        mfaCheckbox.checked = false
-        optionsDiv.classList.add("hidden")
-        mfaDiv.classList.remove("hidden")
-    }
-})
-exitMfaThing.addEventListener("click", (event) => {
-    optionsDiv.classList.remove("hidden")
-    mfaDiv.classList.add("hidden")
-});
 
 updateUserInfo()
 
@@ -387,13 +372,13 @@ function selectNote(nameithink) {
             noteBox.readOnly = true
             noteBox.value = ""
             noteBox.placeholder = ""
-            displayError("something went wrong, please try again later")
+            displayError("Something went wrong... Please try again later!")
         })
         .then((response) => response)
         .then((response) => {
             selectedNote = nameithink
             noteBox.readOnly = false
-            noteBox.placeholder = "type something.."
+            noteBox.placeholder = "Type something!"
 
             async function doStuff() {
                 let responseData = await response.json()
@@ -425,11 +410,11 @@ function selectNote(nameithink) {
                                 .then((response) => response)
                                 .then((response) => {
                                     if (response.status == 418) {
-                                        displayError("you've ran out of storage :3 changes will not be saved until you free up storage!!! owo")
+                                        displayError("You've ran out of storage... Changes will not be saved until you free up storage!")
                                     }
                                 })
                                 .catch((error) => {
-                                    displayError("failed to save changes, please try again later")
+                                    displayError("Failed to save changes, please try again later...")
                                 })
                         }
                     }, waitTime);
@@ -489,7 +474,7 @@ function updateNotes() {
                                     updateNotes()
                                 })
                                 .catch((error) => {
-                                    displayError("something went wrong! please try again later")
+                                    displayError("Something went wrong! Please try again later...")
                                 })
                         } else {
                             selectNote(responseData[i]["id"])
@@ -505,7 +490,7 @@ function updateNotes() {
 updateNotes()
 
 newNote.addEventListener("click", (event) => {
-    let noteName = displayPrompt("note name? :3", "e.g. shopping list", burgerFunction)
+    let noteName = displayPrompt("Note name?", "E.G Shopping list", burgerFunction)
     function burgerFunction(noteName) {
         if (noteName != null) {
             let encryptedName = CryptoJS.AES.encrypt(noteName, password).toString();
@@ -520,12 +505,12 @@ newNote.addEventListener("click", (event) => {
                 }
             })
                 .catch((error) => {
-                    displayError("failed to create new note, please try again later")
+                    displayError("Failed to create new note, please try again later...")
                 })
                 .then((response) => {
                     if (response.status !== 200) {
                         updateNotes()
-                        displayError("failed to create new note (HTTP error code " + response.status + ")")
+                        displayError("Failed to create new note (HTTP error code " + response.status + ")")
                     } else {
                         updateNotes()
                     }
@@ -559,7 +544,7 @@ function exportNotes() {
             async function doStuff() {
                 let responseData = await response.json()
                 for (let i in responseData) {
-                    exportNotes.innerText = "decrypting " + i + "/" + noteCount
+                    exportNotes.innerText = "Decrypting " + i + "/" + noteCount
 
                     let bytes = CryptoJS.AES.decrypt(responseData[i]["title"], password);
                     let originalTitle = bytes.toString(CryptoJS.enc.Utf8);
@@ -573,10 +558,10 @@ function exportNotes() {
                 }
                 let jsonString = JSON.parse(JSON.stringify(responseData))
 
-                exportNotesButton.innerText = "export notes"
+                exportNotesButton.innerText = "Export notes"
                 downloadObjectAsJson(jsonString, "data")
                 optionsDiv.classList.add("hidden")
-                displayError("exported notes!")
+                displayError("Exported notes!")
 
             }
             doStuff()
@@ -584,13 +569,13 @@ function exportNotes() {
 }
 
 exportNotesButton.addEventListener("click", (event) => {
-    exportNotesButton.innerText = "downloading.."
+    exportNotesButton.innerText = "Downloading..."
     exportNotes()
 });
 
 removeBox.addEventListener("click", (event) => {
     if (selectedNote == 0) {
-        displayError("you need to select a note first!")
+        displayError("You need to select a note first!")
     } else {
         fetch("/api/removenote", {
             method: "POST",
@@ -607,9 +592,7 @@ removeBox.addEventListener("click", (event) => {
                 updateNotes()
             })
             .catch((error) => {
-                displayError("something went wrong! please try again later")
+                displayError("Something went wrong! Please try again later...")
             })
     }
 });
-
-displayError("Burgernotes is shutting down on November 12th, please refer to <a href='/shutdownfaq'>this FAQ</a> for more info.")
