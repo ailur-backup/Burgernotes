@@ -555,6 +555,16 @@ body {
     font-weight: 900;
 }
 
+.alertDiv {
+    position: fixed;
+    margin: 0;
+    width: 100%;
+    background-color: #ffffeb;
+    height: 25px;
+    z-index: 9999;
+    top: 0;
+}
+
 /* main */
 
 .mainDiv {

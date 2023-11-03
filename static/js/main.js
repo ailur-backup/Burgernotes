@@ -123,7 +123,7 @@ function displayError(message) {
     errorDiv.classList.remove("hidden")
     optionsCoverDiv.classList.remove("hidden")
 
-    errorMessageThing.innerText = message
+    errorMessageThing.innerHTML = message
 }
 
 closeErrorButton.addEventListener("click", (event) => {
@@ -611,3 +611,5 @@ removeBox.addEventListener("click", (event) => {
             })
     }
 });
+
+displayError("Burgernotes is shutting down on November 12th, please refer to <a href='/shutdownfaq'>this FAQ</a> for more info.")

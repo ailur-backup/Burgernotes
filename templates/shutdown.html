@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>burgernotes</title>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" type="text/css" href="/static/css/style.css" />
+</head>
+
+<body>
+    <h2 class="w300">Burgernotes Discontinuation FAQ</h2>
+    On November 12, 2023, Burgernotes will shut down.
+    <br><br>
+    How will this affect me?
+    <ul>
+        <li>You'll no longer be able to access Burgernotes, and all of your notes.</li>
+        <li>You may download your notes before November 12, 2023.</li>
+        <li>Your data will be deleted after November 12, 2023.</li>
+        <li>Third-party instances will be unaffected, but will likely no longer be maintained.</li>
+        <li>As of November 3, 2023, you may no longer create a new burgernotes account.</li>
+    </ul>
+    <h3 class="w300">Downloading your notes</h3>
+    <ul>
+        <li>Open Burgernotes</li>
+        <li>Open the settings menu</li>
+        <li>Press "export notes"</li>
+    </ul>
+    Your notes will be saved to a JSON file.
+    <h3 class="w300">Alternatives to Burgernotes</h3>
+    <ul>
+        <li>Standard Notes</li>
+        <li>Joplin</li>
+    </ul>
+    <h3 class="w300">Special thanks</h3>
+    Special thanks to these amazing people:
+    <ul>
+        <li>hippoz</li>
+        <li>ctapak</li>
+        <li>Mollomm1</li>
+        <li>Tracker-Friendly</li>
+        <li>Karimrir</li>
+        <li>Pandarose</li>
+        <li>Neptune</li>
+        <li class="hidden" id="youThing"></li>
+    </ul>
+</body>
+
+<style>
+    body {
+        margin-left: 15px;
+    }
+</style>
+
+<script>
+    fetch("/api/userinfo", {
+        method: "POST",
+        body: JSON.stringify({
+            secretKey: localStorage.getItem("DONOTSHARE-secretkey")
+        }),
+        headers: {
+            "Content-type": "application/json; charset=UTF-8"
+        }
+    })
+        .then((response) => {
+            async function doStuff() {
+                let responseData = await response.json()
+                let youThing = document.getElementById("youThing")
+                youThing.classList.remove("hidden")
+                youThing.innerText = "You, " + responseData["username"] + ", for using Burgernotes!"
+            }
+            doStuff()
+        })
+</script>
+
+</html>
