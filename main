@@ -120,7 +120,7 @@ def privacy():
 
 @app.route("/shutdownfaq")
 def shutdown():
-    return render_template("shutdown.html")
+    return send_from_directory("templates", "shutdown.html")
 
 # API
 @app.route("/api/signup", methods=("GET", "POST"))
