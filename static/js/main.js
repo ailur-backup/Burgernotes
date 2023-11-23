@@ -493,6 +493,11 @@ newNote.addEventListener("click", (event) => {
     let noteName = displayPrompt("Note name?", "E.G Shopping list", burgerFunction)
     function burgerFunction(noteName) {
         if (noteName != null) {
+            if (noteName.length > 21) {
+                displayError("Invalid note name: Too long (max 21 characters)");
+                return;
+            }
+
             let encryptedName = CryptoJS.AES.encrypt(noteName, password).toString();
             fetch("/api/newnote", {
                 method: "POST",
