@@ -293,7 +293,7 @@ sessionManagerButton.addEventListener("click", (event) => {
                         sessionText.innerText = truncateString(responseData[i]["device"], 27)
                     }
                     sessionText.title = responseData[i]["device"]
-                    sessionRemoveButton.innerText = "X"
+                    sessionRemoveButton.innerText = "x"
 
                     sessionImage.src = "/static/svg/device_other.svg"
 
