@@ -137,6 +137,7 @@ body {
     border-color: var(--border-color);
     border-width: 0px;
     border-top-width: 1px;
+    display: flex;
 }
 
 .bottomBar button {
@@ -157,7 +158,10 @@ body {
     background-position: center;
     background-repeat: no-repeat;
     background-size: 55%;
-    transform: translateY(-5px);
+}
+
+.bottomBar .textManipulator {
+    margin-left: auto;
 }
 
 .bottomBar button:hover {
@@ -177,6 +181,7 @@ body {
     height: 90px;
 
     background-color: var(--bar);
+
 
     border: solid;
     border-color: var(--border-color);
@@ -645,13 +650,4 @@ body {
 
 .links a:hover {
     text-decoration: dashed;
-}
-
-@supports (-webkit-appearance: none) {
-  .bottomBar .removeButton {
-      transform: translateY(0px);
-  }
-  .bottomBar .wordCounter {
-      transform: translateY(-9px);
-  }
 }
