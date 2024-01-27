@@ -157,10 +157,7 @@ body {
     background-position: center;
     background-repeat: no-repeat;
     background-size: 55%;
-}
-
-.bottomBar .wordCounter {
-    transform: translateY(-9px)
+    transform: translateY(-5px);
 }
 
 .bottomBar button:hover {
@@ -648,4 +645,13 @@ body {
 
 .links a:hover {
     text-decoration: dashed;
+}
+
+@supports (-webkit-appearance: none) {
+  .bottomBar .removeButton {
+      transform: translateY(0px);
+  }
+  .bottomBar .wordCounter {
+      transform: translateY(-9px);
+  }
 }
