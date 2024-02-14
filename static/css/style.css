@@ -94,6 +94,7 @@ h4,
 h5,
 h6 {
     color: var(--text-color);
+    white-space: break-spaces;
 }
 
 h7 {

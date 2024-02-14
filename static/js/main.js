@@ -614,4 +614,6 @@ removeBox.addEventListener("click", (event) => {
     }
 });
 
-displayError("To use PageBurger:\nSwipe Right on a note to open it\nSwipe left in the text boxes to return to notes\nClick on a note to highlight it")
+if (isFirstTimeVisitor() && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    displayError("To use PageBurger:\n  Swipe Right on a note to open it\n  Swipe left in the text boxes to return to notes\n  Click on a note to highlight it")
+}
