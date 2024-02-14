@@ -579,7 +579,7 @@ function isFirstTimeVisitor() {
     } else {
         var expirationDate = new Date();
         expirationDate.setFullYear(expirationDate.getFullYear() + 1);
-        document.cookie = "visited=true; expires=" + expirationDate.toUTCStrin>
+        document.cookie = "visited=true; expires=" + expirationDate.toUTCString() + "; path=/; SameSite=strict";
         return true;
     }
 }
