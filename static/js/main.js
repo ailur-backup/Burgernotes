@@ -573,6 +573,18 @@ function exportNotes() {
         })
 }
 
+function isFirstTimeVisitor() {
+    if (document.cookie.indexOf("visited=true") !== -1) {
+        return false;
+    } else {
+        var expirationDate = new Date();
+        expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+        document.cookie = "visited=true; expires=" + expirationDate.toUTCStrin>
+        return true;
+    }
+}
+
+
 exportNotesButton.addEventListener("click", (event) => {
     exportNotesButton.innerText = "Downloading..."
     exportNotes()
@@ -601,3 +613,5 @@ removeBox.addEventListener("click", (event) => {
             })
     }
 });
+
+displayError("To use PageBurger:\nSwipe Right on a note to open it\nSwipe left in the text boxes to return to notes\nClick on a note to highlight it")
