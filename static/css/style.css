@@ -591,13 +591,19 @@ body {
     text-align: left;
     margin-top: 8vh;
     margin-left: 7vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.startDiv h1 {
+    margin: 0;
 }
 
 .mainDiv a {
     padding: 15px;
     padding-left: 20px;
     padding-right: 20px;
-    margin-right: 5px;
+    margin-right: auto;
     color: white;
     text-decoration: none;
     background-color: var(--theme-color);
