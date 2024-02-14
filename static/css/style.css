@@ -137,6 +137,7 @@ body {
     border-color: var(--border-color);
     border-width: 0px;
     border-top-width: 1px;
+    display: flex;
 }
 
 .bottomBar button {
@@ -153,11 +154,14 @@ body {
     filter: invert(var(--invertdm));
     padding-left: 17.5px;
     padding-right: 17.5px;
-    transform: translateY(-5px);
     background-image: url("/static/svg/delete.svg");
     background-position: center;
     background-repeat: no-repeat;
     background-size: 55%;
+}
+
+.bottomBar .textManipulator {
+    margin-left: auto;
 }
 
 .bottomBar button:hover {
@@ -177,6 +181,7 @@ body {
     height: 90px;
 
     background-color: var(--bar);
+
 
     border: solid;
     border-color: var(--border-color);
