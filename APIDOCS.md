@@ -9,7 +9,7 @@ POST - /api/signup - provide "username" and "password".
 
 POST - /api/login - provide "username" and "password".
 
-To prevent the server from knowing the encryption key, password you provide in the request must be hashed with the argon2 algorithm.
+To prevent the server from knowing the encryption key, the password you provide in the request must be hashed with the argon2 algorithm.
 
 Parallelism should be 1
 Iterations should be 256
@@ -20,7 +20,7 @@ The output should be in the encoded format, not the hashed format
 
 The salt should be the SHA-512 of the password.
 
-Password must be at least 14 characters, username must be under 20 characters and alphanumeric.
+Password should be at least 8 characters, username must be under 20 characters and alphanumeric.
 
 If username is taken, error code 422 will return.
 
