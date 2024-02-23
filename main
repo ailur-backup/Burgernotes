@@ -119,6 +119,10 @@ def privacy():
     return render_template("privacy.html")
 
 # API
+@app.route("/api/version", methods=("GET", "POST"))
+def apiuserinfo():
+    return "PageBurger Version 1.1"
+
 @app.route("/api/signup", methods=("GET", "POST"))
 def apisignup():
     if request.method == "POST":
@@ -131,7 +135,7 @@ def apisignup():
 
         if len(username) > 20:
             return {}, 422
-        
+
         if not username.isalnum():
             return {}, 422
 
