@@ -120,7 +120,7 @@ def privacy():
 
 # API
 @app.route("/api/version", methods=("GET", "POST"))
-def apiuserinfo():
+def apiversion():
     return "PageBurger Version 1.1"
 
 @app.route("/api/signup", methods=("GET", "POST"))
