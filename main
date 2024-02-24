@@ -4,9 +4,11 @@ import sqlite3
 import time
 import secrets
 import configparser
-from waitress import serve
+import asyncio
+from hypercorn.config import Config
+from hypercorn.asyncio import serve
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask import Flask, render_template, request, url_for, flash, redirect, session, make_response, send_from_directory, stream_with_context, Response, request
+from quart import Quart, render_template, request, url_for, flash, redirect, session, make_response, send_from_directory, stream_with_context, Response, request
 
 # Parse configuration file, and check if anything is wrong with it
 config = configparser.ConfigParser()
@@ -20,8 +22,8 @@ MAX_STORAGE = config["config"]["MAX_STORAGE"]
 if SECRET_KEY == "placeholder":
     print("[WARNING] Secret key not set")
 
-# Define Flask
-app = Flask(__name__)
+# Define Quart
+app = Quart(__name__)
 app.config["SECRET_KEY"] = SECRET_KEY
 
 # Database functions
@@ -96,37 +98,37 @@ def check_username_taken(username):
 
 # Main page
 @app.route("/")
-def main():
-    return render_template("main.html")
+async def main():
+    return await render_template("main.html")
 
 # Web app
 @app.route("/app")
-def webapp():
-    return render_template("app.html")
+async def webapp():
+    return await render_template("app.html")
 
 # Login and signup
 @app.route("/signup")
-def signup():
-    return render_template("signup.html")
+async def signup():
+    return await render_template("signup.html")
 
 @app.route("/login")
-def login():
-    return render_template("login.html")
+async def login():
+    return await render_template("login.html")
 
 # Privacy policy
 @app.route("/privacy")
-def privacy():
-    return render_template("privacy.html")
+async def privacy():
+    return await render_template("privacy.html")
 
 # API
 @app.route("/api/version", methods=("GET", "POST"))
-def apiversion():
+async def apiversion():
     return "PageBurger Version 1.1"
 
 @app.route("/api/signup", methods=("GET", "POST"))
-def apisignup():
+async def apisignup():
     if request.method == "POST":
-        data = request.get_json()
+        data = await request.get_json()
         username = data["username"]
         password = data["password"]
 
@@ -172,9 +174,9 @@ def apisignup():
         }, 200
         
 @app.route("/api/login", methods=("GET", "POST"))
-def apilogin():
+async def apilogin():
     if request.method == "POST":
-        data = request.get_json()
+        data = await request.get_json()
         username = data["username"]
         password = data["password"]
 
@@ -202,9 +204,9 @@ def apilogin():
         }, 200
 
 @app.route("/api/userinfo", methods=("GET", "POST"))
-def apiuserinfo():
+async def apiuserinfo():
     if request.method == "POST":
-        data = request.get_json()
+        data = await request.get_json()
         secretKey = data["secretKey"]
 
         userCookie = get_session(secretKey)
@@ -220,9 +222,9 @@ def apiuserinfo():
         return datatemplate
 
 @app.route("/api/listnotes", methods=("GET", "POST"))
-def apilistnotes():
+async def apilistnotes():
     if request.method == "POST":
-        data = request.get_json()
+        data = await request.get_json()
         secretKey = data["secretKey"]
 
         userCookie = get_session(secretKey)
@@ -244,9 +246,9 @@ def apilistnotes():
         return datatemplate, 200
 
 @app.route("/api/exportnotes", methods=("GET", "POST"))
-def apiexportnotes():
+async def apiexportnotes():
     if request.method == "POST":
-        data = request.get_json()
+        data = await request.get_json()
         secretKey = data["secretKey"]
 
         userCookie = get_session(secretKey)
@@ -271,9 +273,9 @@ def apiexportnotes():
         return datatemplate, 200
     
 @app.route("/api/newnote", methods=("GET", "POST"))
-def apinewnote():
+async def apinewnote():
     if request.method == "POST":
-        data = request.get_json()
+        data = await request.get_json()
         secretKey = data["secretKey"]
         noteName = data["noteName"]
 
@@ -289,9 +291,9 @@ def apinewnote():
         return {}, 200
 
 @app.route("/api/readnote", methods=("GET", "POST"))
-def apireadnote():
+async def apireadnote():
     if request.method == "POST":
-        data = request.get_json()
+        data = await request.get_json()
         secretKey = data["secretKey"]
         noteId = data["noteId"]
 
@@ -313,9 +315,9 @@ def apireadnote():
             return {}, 422
 
 @app.route("/api/editnote", methods=("GET", "POST"))
-def apieditnote():
+async def apieditnote():
     if request.method == "POST":
-        data = request.get_json()
+        data = await request.get_json()
         secretKey = data["secretKey"]
         noteId = data["noteId"]
         content = data["content"]
@@ -342,9 +344,9 @@ def apieditnote():
             return {}, 422
 
 @app.route("/api/removenote", methods=("GET", "POST"))
-def apiremovenote():
+async def apiremovenote():
     if request.method == "POST":
-        data = request.get_json()
+        data = await request.get_json()
         secretKey = data["secretKey"]
         noteId = data["noteId"]
 
@@ -368,9 +370,9 @@ def apiremovenote():
 
 
 @app.route("/api/deleteaccount", methods=("GET", "POST"))
-def apideleteaccount():
+async def apideleteaccount():
     if request.method == "POST":
-        data = request.get_json()
+        data = await request.get_json()
         secretKey = data["secretKey"]
 
         userCookie = get_session(secretKey)
@@ -389,9 +391,9 @@ def apideleteaccount():
         return {}, 200
 
 @app.route("/api/sessions/list", methods=("GET", "POST"))
-def apisessionslist():
+async def apisessionslist():
     if request.method == "POST":
-        data = request.get_json()
+        data = await request.get_json()
         secretKey = data["secretKey"]
 
         userCookie = get_session(secretKey)
@@ -418,9 +420,9 @@ def apisessionslist():
         return datatemplate, 200
 
 @app.route("/api/sessions/remove", methods=("GET", "POST"))
-def apisessionsremove():
+async def apisessionsremove():
     if request.method == "POST":
-        data = request.get_json()
+        data = await request.get_json()
         secretKey = data["secretKey"]
         sessionId = data["sessionId"]
 
@@ -458,19 +460,22 @@ def listusers(secretkey):
         return redirect("/")
 
 @app.route("/api/logout")
-def apilogout():
-    return render_template("logout.html")
+async def apilogout():
+    return await render_template("logout.html")
 
 @app.errorhandler(500)
-def burger(e):
+async def burger(e):
     return {}, 500
 
 @app.errorhandler(404)
-def burger(e):
-    return render_template("error.html", errorCode=404, errorMessage="Page not found"), 404
+async def burger(e):
+    return await render_template("error.html", errorCode=404, errorMessage="Page not found"), 404
 
 # Start server
+hypercornconfig = Config()
+hypercornconfig.bind = (HOST + ":" + PORT)
+
 if __name__ == "__main__":
     print("[INFO] Server started")
-    serve(app, host=HOST, port=PORT)
+    asyncio.run(serve(app, hypercornconfig))
     print("[INFO] Server stopped")
