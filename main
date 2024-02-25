@@ -172,19 +172,15 @@ async def apisignup():
         return {
             "key": randomCharacters
         }, 200
-        
+
 @app.route("/api/login", methods=("GET", "POST"))
 async def apilogin():
     if request.method == "POST":
         data = await request.get_json()
         username = data["username"]
         password = data["password"]
-
-        usernames_old = ['EXAMPLE']
-
-        migrate = False
-        if username in usernames_old:
-            migrate = True
+        passwordchange = data["passwordchange"]
+        newpass = data["newpass"]
 
         check_username_thing = check_username_taken(username)
 
@@ -205,28 +201,16 @@ async def apilogin():
         conn.commit()
         conn.close()
 
-        if migrate == False:
-            return {
-                "key": randomCharacters
-            }, 200
-        else:
-            return {
-                "key": randomCharacters,
-                "migrate": "1"
-            }, 200
+        return {
+            "key": randomCharacters,
+        }, 200
 
-@app.route("/api/supersecretapi", methods=("GET", "POST"))
-def supersecretapi():
-    if request.method == "POST":
-        data = request.get_json()
-        username = data["username"]
-        password = data["password"]
-        hashedpassword = generate_password_hash(password)
-
-        conn = get_db_connection()
-        conn.execute("UPDATE users SET password = ? WHERE username = ?", (hashedpassword, username))
-        conn.commit()
-        conn.close()
+        if str(passwordchange) == "1":
+            hashedpassword = generate_password_hash(newpass)
+            conn = get_db_connection()
+            conn.execute("UPDATE users SET password = ? WHERE username = ?", (hashedpassword, username))
+            conn.commit()
+            conn.close()
 
 @app.route("/api/userinfo", methods=("GET", "POST"))
 async def apiuserinfo():
