@@ -205,7 +205,7 @@ async def apilogin():
             "key": randomCharacters,
         }, 200
 
-        if str(passwordchange) == "1":
+        if str(passwordchange) == "yes":
             hashedpassword = generate_password_hash(newpass)
             conn = get_db_connection()
             conn.execute("UPDATE users SET password = ? WHERE username = ?", (hashedpassword, username))

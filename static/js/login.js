@@ -111,8 +111,8 @@ signupButton.addEventListener("click", (event) => {
                 body: JSON.stringify({
                     username: username,
                     password: await hashpass(password),
-                    passwordchange: "0",
-                    newpass: 0
+                    passwordchange: "no",
+                    newpass: "null"
                 }),
                 headers: {
                     "Content-type": "application/json; charset=UTF-8"
@@ -135,7 +135,7 @@ signupButton.addEventListener("click", (event) => {
                                 body: JSON.stringify({
                                     username: username,
                                     password: await hashpassold(password),
-                                    passwordchange: "1",
+                                    passwordchange: "yes",
                                     newpass: await hashpass(password)
                                 }),
                                 headers: {
