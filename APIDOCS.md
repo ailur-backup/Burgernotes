@@ -7,18 +7,34 @@ Headers should be: "Content-type: application/json; charset=UTF-8" for all POSTs
 
 POST - /api/signup - provide "username" and "password".
 
-POST - /api/login - provide "username" and "password".
+POST - /api/login - provide "username", "password", "changepassword" (must be "yes" or "no") and "newpass"
 
-To prevent the server from knowing the encryption key, the password you provide in the request must be hashed with the argon2 algorithm.
+To prevent the server from knowing the encryption key, the password you provide in the request must be hashed with the SHA-3 with 128 iterations (the hash is hashed again 128 times).
+
+If you wish to change the user's password, set "changepassword" to "yes" and "newpass" to the new hash.
+
+
+Some users use the legacy argon2id mode (by which i mean about 8, so only implement if you feel like it), and to implement argon2id functionality, you hash like this:
 
 Parallelism should be 1
+
 Iterations should be 256
+
 Memory Allocated in bytes should be 512
+
 Length of Hash should be 32 bytes
+
 The output should be in the encoded format, not the hashed format
 
+Salt should be the SHA512 of the password
 
-The salt should be the SHA-512 of the password.
+
+(Yes i know this is really bad practice, guess why we are replacing it)
+
+To test if SHA-3 or argon2 is used, just try the SHA-3 and if 422 gets returned try argon2.
+
+(For the sake of all of us, change the password to the SHA-3 hash)
+
 
 Password should be at least 8 characters, username must be under 20 characters and alphanumeric.
 
@@ -28,13 +44,13 @@ Assuming everything went correctly, the server will return a secret key.
 
 You'll need to store two things in local storage:
 - The secret key you just got, used to fetch notes, save stuff etc.
-- SHA512 hashed password, used as encryption key
+- A SHA512 hashed password, used as encryption key
 
 ## Encryption
 
 Note content and title is encrypted using AES 256-bit.
 
-Encryption password is the SHA512 hashed password we talked about earlier. 
+Encryption password is the SHA512 hashed password we talked about earlier.
 
 ## Basic stuff
 
