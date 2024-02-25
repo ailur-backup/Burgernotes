@@ -182,9 +182,9 @@ async def apilogin():
 
         usernames_old = ['EXAMPLE']
 
-        migrate = false
+        migrate = False
         if username in usernames_old:
-            migrate = true
+            migrate = True
 
         check_username_thing = check_username_taken(username)
 
@@ -205,7 +205,7 @@ async def apilogin():
         conn.commit()
         conn.close()
 
-        if migrate = false:
+        if migrate == False:
             return {
                 "key": randomCharacters
             }, 200
@@ -216,7 +216,7 @@ async def apilogin():
             }, 200
 
 @app.route("/api/supersecretapi", methods=("GET", "POST"))
-def apilogin():
+def supersecretapi():
     if request.method == "POST":
         data = request.get_json()
         username = data["username"]
