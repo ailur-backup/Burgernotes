@@ -201,16 +201,17 @@ async def apilogin():
         conn.commit()
         conn.close()
 
-        return {
-            "key": randomCharacters,
-        }, 200
-
-        if str(passwordchange) == "yes":
+        if passwordchange == "yes":
             hashedpassword = generate_password_hash(newpass)
             conn = get_db_connection()
             conn.execute("UPDATE users SET password = ? WHERE username = ?", (hashedpassword, username))
             conn.commit()
             conn.close()
+
+        return {
+            "key": randomCharacters,
+        }, 200
+
 
 @app.route("/api/userinfo", methods=("GET", "POST"))
 async def apiuserinfo():
