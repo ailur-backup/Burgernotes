@@ -127,6 +127,7 @@ signupButton.addEventListener("click", (event) => {
                             window.location.href = "/app"
                         }
                         else if (response.status == 401) {
+                            console.log("Trying oldhash")
                             fetch("/api/login", {
                                 method: "POST",
                                 body: JSON.stringify({
@@ -139,7 +140,7 @@ signupButton.addEventListener("click", (event) => {
                             })
                                 .then((response) => response)
                                 .then((response) => {
-                                    async function doStuff() {
+                                    async function doStuff2() {
                                         let responseData = await response.json()
                                         if (response.status == 200) {
                                             localStorage.setItem("DONOTSHARE-secretkey", responseData["key"])
@@ -148,7 +149,6 @@ signupButton.addEventListener("click", (event) => {
                                             window.location.href = "/app"
                                         }
                                         else if (response.status == 401) {
-					                		
                                             statusBox.innerText = "Wrong username or password..."
                                             showInput(1)
                                             showElements(true)
@@ -159,7 +159,7 @@ signupButton.addEventListener("click", (event) => {
                                             showElements(true)
                                         }
                                     }
-                                    doStuff()
+                                    doStuff2()
                                 });
                         }
                         else {
