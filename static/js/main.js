@@ -57,7 +57,7 @@ let selectedNote = 0
 let timer
 let waitTime = 400
 
-if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+if (/Android|iPhone|iPod/i.test(navigator.userAgent)) {
     noteBox.style.width = "10px";
     notesBar.style.width = "calc(100% - 10px)"
     noteBox.readOnly = true
@@ -302,7 +302,7 @@ sessionManagerButton.addEventListener("click", (event) => {
                     if (ua.includes("NT") || ua.includes("Linux")) {
                         sessionImage.src = "/static/svg/device_computer.svg"
                     }
-                    if (ua.includes("iPhone" || ua.includes("Android") || ua.include ("iPad") || ua.include ("iPod"))) {
+                    if (ua.includes("iPhone" || ua.includes("Android") || ua.include ("iPod"))) {
                         sessionImage.src = "/static/svg/device_smartphone.svg"
                     }
 
@@ -614,6 +614,6 @@ removeBox.addEventListener("click", (event) => {
     }
 });
 
-if (isFirstTimeVisitor() && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+if (isFirstTimeVisitor() && /Android|iPhone|iPod/i.test(navigator.userAgent)) {
     displayError("To use PageBurger:\n  Swipe Right on a note to open it\n  Swipe left in the text boxes to return to notes\n  Click on a note to highlight it")
 }
