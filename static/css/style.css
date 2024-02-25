@@ -83,6 +83,21 @@
         color: white;
         background-color: #202124;
     }
+
+    .flathubLogo {
+        filter: invert(100%)
+    }
+
+    .feature {
+        background-color: rgba(0, 0, 0, 0) !important;
+        color: var(--text-color)
+    }
+    .mainDiv .yellow {
+        border-color: #e9e98d !important;
+    }
+    .mainDiv .green {
+        border-color: #a9f9a9 !important;
+    }
 }
 
 p,
@@ -636,13 +651,6 @@ body {
 
 .mainDiv .yellow {
     background-color: #ffffeb;
-}
-
-.mainDiv img {
-    position: fixed;
-    right: 7vh;
-    top: 8vh;
-    border-radius: 8px;
 }
 
 .links {
