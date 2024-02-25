@@ -53,15 +53,8 @@ signupButton.addEventListener("click", (event) => {
         statusBox.innerText = "Creating account, please hold on..."
 
         async function hashpass(pass) {
-            const key = await hashwasm.argon2id({
-                password: pass,
-                salt: await hashwasm.sha512(pass),
-                parallelism: 1,
-                iterations: 256,
-                memorySize: 512,
-                hashLength: 32,
-                outputType: "encoded"
-            });
+            /* Very hacky solution to sha3 with 128 iterations */
+            const key = await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(pass)))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))));
             return key
         };
 

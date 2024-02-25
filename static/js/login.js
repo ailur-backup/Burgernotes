@@ -88,7 +88,7 @@ signupButton.addEventListener("click", (event) => {
             showElements(true)
             statusBox.innerText = "Signing in..."
 
-            async function hashpass(pass) {
+            async function hashpassold(pass) {
                 const key = await hashwasm.argon2id({
                     password: pass,
                     salt: await hashwasm.sha512(pass),
@@ -98,6 +98,11 @@ signupButton.addEventListener("click", (event) => {
                     hashLength: 32,
                     outputType: "encoded"
                 });
+                return key
+            };
+
+            async function hashpass(pass) {
+                const key = await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(await hashwasm.sha3(pass))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))));
                 return key
             };
 
@@ -122,9 +127,40 @@ signupButton.addEventListener("click", (event) => {
                             window.location.href = "/app"
                         }
                         else if (response.status == 401) {
-                            statusBox.innerText = "Wrong username or password..."
-                            showInput(1)
-                            showElements(true)
+                            fetch("/api/login", {
+                                method: "POST",
+                                body: JSON.stringify({
+                                    username: username,
+                                    password: await hashpassold(password)
+                                }),
+                                headers: {
+                                    "Content-type": "application/json; charset=UTF-8"
+                                }
+                            })
+                                .then((response) => response)
+                                .then((response) => {
+                                    async function doStuff() {
+                                        let responseData = await response.json()
+                                        if (response.status == 200) {
+                                            localStorage.setItem("DONOTSHARE-secretkey", responseData["key"])
+                                            localStorage.setItem("DONOTSHARE-password", await hashwasm.sha512(password))
+
+                                            window.location.href = "/app"
+                                        }
+                                        else if (response.status == 401) {
+					                		
+                                            statusBox.innerText = "Wrong username or password..."
+                                            showInput(1)
+                                            showElements(true)
+                                        }
+                                        else {
+                                            statusBox.innerText = "Something went wrong! (error code: " + response.status + ")"
+                                            showInput(1)
+                                            showElements(true)
+                                        }
+                                    }
+                                    doStuff()
+                                });
                         }
                         else {
                             statusBox.innerText = "Something went wrong! (error code: " + response.status + ")"
