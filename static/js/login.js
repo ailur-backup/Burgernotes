@@ -104,10 +104,8 @@ signupButton.addEventListener("click", (event) => {
             async function hashpass(pass) {
                 let key = pass
                 for (let i = 0; i < 128; i++) {
-                    await hashwasm.sha3(key)
+                    key = await hashwasm.sha3(key)
                 }
-                console.log(key)
-                stop()
                 return key
             };
 
