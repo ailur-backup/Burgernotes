@@ -615,5 +615,5 @@ removeBox.addEventListener("click", (event) => {
 });
 
 if (isFirstTimeVisitor() && /Android|iPhone|iPod/i.test(navigator.userAgent)) {
-    displayError("To use PageBurger:\n  Swipe Right on a note to open it\n  Swipe left in the text boxes to return to notes\n  Click on a note to highlight it")
+    displayError("To use Burgernotes:\n  Swipe Right on a note to open it\n  Swipe left in the text boxes to return to notes\n  Click on a note to highlight it")
 }

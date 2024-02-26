@@ -27,7 +27,7 @@ function showInput(inputType) {
         passwordBox.classList.add("hidden")
         backButton.classList.add("hidden")
         inputNameBox.innerText = "Username:"
-        statusBox.innerText = "Login to your PageBurger account!"
+        statusBox.innerText = "Login to your Burgernotes account!"
         currentInputType = 0
     } else if (inputType == 1) {
         usernameBox.classList.add("hidden")

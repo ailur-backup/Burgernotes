@@ -123,7 +123,7 @@ async def privacy():
 # API
 @app.route("/api/version", methods=("GET", "POST"))
 async def apiversion():
-    return "PageBurger Version 1.1"
+    return "Burgernotes Version 1.1"
 
 @app.route("/api/signup", methods=("GET", "POST"))
 async def apisignup():
