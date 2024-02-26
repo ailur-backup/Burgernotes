@@ -7,11 +7,11 @@ Headers should be: "Content-type: application/json; charset=UTF-8" for all POSTs
 
 POST - /api/signup - provide "username" and "password".
 
-POST - /api/login - provide "username", "password", "changepassword" (must be "yes" or "no") and "newpass"
+POST - /api/login - provide "username", "password", "passwordchange" (must be "yes" or "no") and "newpass"
 
 To prevent the server from knowing the encryption key, the password you provide in the request must be hashed with the SHA-3 with 128 iterations (the hash is hashed again 128 times).
 
-If you wish to change the user's password, set "changepassword" to "yes" and "newpass" to the new hash.
+If you wish to change the user's password, set "passwordchange" to "yes" and "newpass" to the new hash.
 
 
 Some users use the legacy argon2id mode (by which i mean about 8, so only implement if you feel like it), and to implement argon2id functionality, you hash like this:
