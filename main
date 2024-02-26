@@ -96,6 +96,15 @@ def check_username_taken(username):
         return "error"
     return post["id"]
 
+
+# Enable CORS for all origins
+@app.after_request
+async def add_cors_headers(response):
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Headers", "*")
+    response.headers.add("Access-Control-Allow-Methods", "*")
+    return response
+
 # Main page
 @app.route("/")
 async def main():
