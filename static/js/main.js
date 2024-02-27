@@ -203,7 +203,7 @@ function updateUserInfo() {
             secretKey: secretkey
         }),
         headers: {
-            "Content-type": "application/json; charset=UTF-8"
+            "Content-Type": "application/json; charset=UTF-8"
         }
     })
         .then((response) => response)
@@ -250,7 +250,7 @@ deleteMyAccountButton.addEventListener("click", (event) => {
                 secretKey: secretkey
             }),
             headers: {
-                "Content-type": "application/json; charset=UTF-8"
+                "Content-Type": "application/json; charset=UTF-8"
             }
         })
             .then((response) => response)
@@ -273,7 +273,7 @@ sessionManagerButton.addEventListener("click", (event) => {
             secretKey: secretkey
         }),
         headers: {
-            "Content-type": "application/json; charset=UTF-8"
+            "Content-Type": "application/json; charset=UTF-8"
         }
     })
         .then((response) => response)
@@ -314,7 +314,7 @@ sessionManagerButton.addEventListener("click", (event) => {
                                 sessionId: responseData[i]["id"]
                             }),
                             headers: {
-                                "Content-type": "application/json; charset=UTF-8"
+                                "Content-Type": "application/json; charset=UTF-8"
                             }
                         })
                             .then((response) => response)
@@ -365,7 +365,7 @@ function selectNote(nameithink) {
             noteId: nameithink,
         }),
         headers: {
-            "Content-type": "application/json; charset=UTF-8"
+            "Content-Type": "application/json; charset=UTF-8"
         }
     })
         .catch((error) => {
@@ -404,7 +404,7 @@ function selectNote(nameithink) {
                                     content: encryptedText,
                                 }),
                                 headers: {
-                                    "Content-type": "application/json; charset=UTF-8"
+                                    "Content-Type": "application/json; charset=UTF-8"
                                 }
                             })
                                 .then((response) => response)
@@ -431,7 +431,7 @@ function updateNotes() {
             secretKey: secretkey
         }),
         headers: {
-            "Content-type": "application/json; charset=UTF-8"
+            "Content-Type": "application/json; charset=UTF-8"
         }
     })
         .then((response) => response)
@@ -466,7 +466,7 @@ function updateNotes() {
                                     noteId: responseData[i]["id"]
                                 }),
                                 headers: {
-                                    "Content-type": "application/json; charset=UTF-8"
+                                    "Content-Type": "application/json; charset=UTF-8"
                                 }
                             })
                                 .then((response) => response)
@@ -506,7 +506,7 @@ newNote.addEventListener("click", (event) => {
                     noteName: encryptedName,
                 }),
                 headers: {
-                    "Content-type": "application/json; charset=UTF-8"
+                    "Content-Type": "application/json; charset=UTF-8"
                 }
             })
                 .catch((error) => {
@@ -541,7 +541,7 @@ function exportNotes() {
             secretKey: secretkey
         }),
         headers: {
-            "Content-type": "application/json; charset=UTF-8"
+            "Content-Type": "application/json; charset=UTF-8"
         }
     })
         .then((response) => response)
@@ -601,7 +601,7 @@ removeBox.addEventListener("click", (event) => {
                 noteId: selectedNote
             }),
             headers: {
-                "Content-type": "application/json; charset=UTF-8"
+                "Content-Type": "application/json; charset=UTF-8"
             }
         })
             .then((response) => response)

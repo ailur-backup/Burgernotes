@@ -118,7 +118,7 @@ signupButton.addEventListener("click", (event) => {
                     newpass: "null"
                 }),
                 headers: {
-                    "Content-type": "application/json; charset=UTF-8"
+                    "Content-Type": "application/json; charset=UTF-8"
                 }
             })
                 .then((response) => response)
@@ -142,7 +142,7 @@ signupButton.addEventListener("click", (event) => {
                                     newpass: await hashpass(password)
                                 }),
                                 headers: {
-                                    "Content-type": "application/json; charset=UTF-8"
+                                    "Content-Type": "application/json; charset=UTF-8"
                                 }
                             })
                                 .then((response) => response)
