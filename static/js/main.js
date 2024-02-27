@@ -211,7 +211,7 @@ function updateUserInfo() {
                     closeErrorButton.classList.add("hidden")
                     usernameBox.innerText = ""
                     setTimeout(function () {
-                        window.location.replace("https://notes.hectabit.org/api/logout")
+                        window.location.replace("../logout/index.html")
                     }, 2500);
                 } else {
                     let responseData = await response.json()

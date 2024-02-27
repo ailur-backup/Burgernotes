@@ -97,25 +97,29 @@ def check_username_taken(username):
     return post["id"]
 
 # Main page
+@app.route("/index.html")
 @app.route("/")
 async def main():
     return await render_template("main.html")
 
 # Web app
+@app.route("/app/index.html")
 @app.route("/app")
 async def webapp():
     return await render_template("app.html")
 
 # Login and signup
+@app.route("/signup/index.html")
 @app.route("/signup")
 async def signup():
     return await render_template("signup.html")
 
-@app.route("/login")
+@app.route("/login/index.html")
 async def login():
     return await render_template("login.html")
 
 # Privacy policy
+@app.route("/privacy/index.html")
 @app.route("/privacy")
 async def privacy():
     return await render_template("privacy.html")
@@ -500,7 +504,8 @@ def listusers(secretkey):
     else:
         return redirect("/")
 
-@app.route("/api/logout")
+@app.route("/logout/index.html")
+@app.route("/logout")
 async def apilogout():
     return await render_template("logout.html")
 
