@@ -233,7 +233,7 @@ usernameBox.addEventListener("click", (event) => {
     updateUserInfo()
 });
 logOutButton.addEventListener("click", (event) => {
-    window.location.replace("https://notes.hectabit.org/api/logout")
+    window.location.replace("/logout/index.html")
 });
 exitThing.addEventListener("click", (event) => {
     optionsDiv.classList.add("hidden")
