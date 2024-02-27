@@ -68,6 +68,9 @@ note content will have to be decrypted.
 POST - /api/editnote - edit notes, provide "secretKey", "noteId", and "content"
 "content" should be encrypted.
 
+POST - /api/editnotetitle - edit note titles, provide "secretKey", "noteId", and "content"
+"content" should be encrypted.
+
 POST - /api/removenote - remove notes, provide "secretKey" and "noteId"
 
 ## More stuff
