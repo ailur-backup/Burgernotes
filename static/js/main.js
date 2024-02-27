@@ -206,7 +206,11 @@ function updateUserInfo() {
             "Content-Type": "application/json; charset=UTF-8"
         }
     })
-        .then((response) => response)
+        .catch((error) => {
+            noteBox.readOnly = true
+            noteBox.value = ""
+            noteBox.placeholder = "Failed to connect to the server.\nPlease check your internet connection."
+        })
         .then((response) => {
             async function doStuff() {
                 if (response.status == 500) {
@@ -302,7 +306,7 @@ sessionManagerButton.addEventListener("click", (event) => {
                     if (ua.includes("NT") || ua.includes("Linux")) {
                         sessionImage.src = "/static/svg/device_computer.svg"
                     }
-                    if (ua.includes("iPhone" || ua.includes("Android") || ua.include ("iPod"))) {
+                    if (ua.includes("iPhone" || ua.includes("Android") || ua.include("iPod"))) {
                         sessionImage.src = "/static/svg/device_smartphone.svg"
                     }
 
