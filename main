@@ -114,7 +114,7 @@ async def webapp():
 
 # Login and signup
 @app.route("/signup/index.html")
-async def signup():
+async def signuprdir():
     return redirect("/signup", code=302)
 @app.route("/signup")
 async def signup():
