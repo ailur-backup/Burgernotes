@@ -236,7 +236,7 @@ usernameBox.addEventListener("click", (event) => {
     updateUserInfo()
 });
 logOutButton.addEventListener("click", (event) => {
-    window.location.replace("/logout/index.html")
+    window.location.replace("../logout/index.html")
 });
 exitThing.addEventListener("click", (event) => {
     optionsDiv.classList.add("hidden")
@@ -256,7 +256,7 @@ deleteMyAccountButton.addEventListener("click", (event) => {
             .then((response) => response)
             .then((response) => {
                 if (response.status == 200) {
-                    window.location.href = "https://notes.hectabit.org/api/logout"
+                    window.location.href = "../logout/index.html"
                 } else {
                     displayError("Failed to delete account (HTTP error code " + response.status + ")")
                 }
@@ -320,7 +320,7 @@ sessionManagerButton.addEventListener("click", (event) => {
                             .then((response) => response)
                             .then((response) => {
                                 if (responseData[i]["thisSession"] == true) {
-                                    window.location.replace("https://notes.hectabit.org/api/logout")
+                                    window.location.replace("../logout/index.html")
                                 }
                             });
                         sessionElement.remove()
