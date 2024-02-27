@@ -105,25 +105,40 @@ async def add_cors_headers(response):
     return response
 
 # Main page
+@app.route("/index.html")
+async def mainrdir():
+    return redirect("/", code=302)
 @app.route("/")
 async def main():
     return await render_template("main.html")
 
 # Web app
+@app.route("/app/index.html")
+async def apprdir():
+    return redirect("/app", code=302)
 @app.route("/app")
 async def webapp():
     return await render_template("app.html")
 
 # Login and signup
+@app.route("/signup/index.html")
+async def signuprdir():
+    return redirect("/signup", code=302)
 @app.route("/signup")
 async def signup():
     return await render_template("signup.html")
 
+@app.route("/login/index.html")
+async def loginrdir():
+    return redirect("/login", code=302)
 @app.route("/login")
 async def login():
     return await render_template("login.html")
 
 # Privacy policy
+@app.route("/privacy/index.html")
+async def privacyrdir():
+    return redirect("/privacy", code=302)
 @app.route("/privacy")
 async def privacy():
     return await render_template("privacy.html")
@@ -508,7 +523,10 @@ def listusers(secretkey):
     else:
         return redirect("/")
 
-@app.route("/api/logout")
+@app.route("/logout/index.html")
+async def logoutrdir():
+    return redirect("/logout", code=302)
+@app.route("/logout")
 async def apilogout():
     return await render_template("logout.html")
 
