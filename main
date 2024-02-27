@@ -352,6 +352,37 @@ async def apieditnote():
                 return {}, 403
         else:
             return {}, 422
+        
+
+@app.route("/api/editnotetitle", methods=("GET", "POST"))
+async def apieditnotetitle():
+    if request.method == "POST":
+        data = await request.get_json()
+        secretKey = data["secretKey"]
+        noteId = data["noteId"]
+        content = data["content"]
+
+        userCookie = get_session(secretKey)
+        user = get_user(userCookie["id"])
+
+        note = get_note(noteId)
+        
+        if get_space(user["id"]) + len(content.encode("utf-8")) > int(MAX_STORAGE):
+            return {}, 418
+
+        if (note != "error"):
+            if (user["id"] == note["creator"]):
+                conn = get_db_connection()
+                conn.execute("UPDATE notes SET title = ?, edited = ? WHERE id = ?", (content, str(time.time()), noteId))
+                conn.commit()
+                conn.close()
+
+                return {}, 200
+            else:
+                return {}, 403
+        else:
+            return {}, 422
+
 
 @app.route("/api/removenote", methods=("GET", "POST"))
 async def apiremovenote():
