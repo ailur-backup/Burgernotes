@@ -201,10 +201,7 @@ function updateUserInfo() {
         method: "POST",
         body: JSON.stringify({
             secretKey: secretkey
-        }),
-        headers: {
-            "Content-Type": "application/json; charset=UTF-8"
-        }
+        })
     })
         .then((response) => response)
         .then((response) => {
@@ -248,10 +245,7 @@ deleteMyAccountButton.addEventListener("click", (event) => {
             method: "POST",
             body: JSON.stringify({
                 secretKey: secretkey
-            }),
-            headers: {
-                "Content-Type": "application/json; charset=UTF-8"
-            }
+            })
         })
             .then((response) => response)
             .then((response) => {
@@ -271,10 +265,7 @@ sessionManagerButton.addEventListener("click", (event) => {
         method: "POST",
         body: JSON.stringify({
             secretKey: secretkey
-        }),
-        headers: {
-            "Content-Type": "application/json; charset=UTF-8"
-        }
+        })
     })
         .then((response) => response)
         .then((response) => {
@@ -312,10 +303,7 @@ sessionManagerButton.addEventListener("click", (event) => {
                             body: JSON.stringify({
                                 secretKey: secretkey,
                                 sessionId: responseData[i]["id"]
-                            }),
-                            headers: {
-                                "Content-Type": "application/json; charset=UTF-8"
-                            }
+                            })
                         })
                             .then((response) => response)
                             .then((response) => {
@@ -363,10 +351,7 @@ function selectNote(nameithink) {
         body: JSON.stringify({
             secretKey: secretkey,
             noteId: nameithink,
-        }),
-        headers: {
-            "Content-Type": "application/json; charset=UTF-8"
-        }
+        })
     })
         .catch((error) => {
             noteBox.readOnly = true
@@ -402,10 +387,7 @@ function selectNote(nameithink) {
                                     secretKey: secretkey,
                                     noteId: nameithink,
                                     content: encryptedText,
-                                }),
-                                headers: {
-                                    "Content-Type": "application/json; charset=UTF-8"
-                                }
+                                })
                             })
                                 .then((response) => response)
                                 .then((response) => {
@@ -429,10 +411,7 @@ function updateNotes() {
         method: "POST",
         body: JSON.stringify({
             secretKey: secretkey
-        }),
-        headers: {
-            "Content-Type": "application/json; charset=UTF-8"
-        }
+        })
     })
         .then((response) => response)
         .then((response) => {
@@ -464,10 +443,7 @@ function updateNotes() {
                                 body: JSON.stringify({
                                     secretKey: secretkey,
                                     noteId: responseData[i]["id"]
-                                }),
-                                headers: {
-                                    "Content-Type": "application/json; charset=UTF-8"
-                                }
+                                })
                             })
                                 .then((response) => response)
                                 .then((response) => {
@@ -504,10 +480,7 @@ newNote.addEventListener("click", (event) => {
                 body: JSON.stringify({
                     secretKey: secretkey,
                     noteName: encryptedName,
-                }),
-                headers: {
-                    "Content-Type": "application/json; charset=UTF-8"
-                }
+                })
             })
                 .catch((error) => {
                     displayError("Failed to create new note, please try again later...")
@@ -539,10 +512,7 @@ function exportNotes() {
         method: "POST",
         body: JSON.stringify({
             secretKey: secretkey
-        }),
-        headers: {
-            "Content-Type": "application/json; charset=UTF-8"
-        }
+        })
     })
         .then((response) => response)
         .then((response) => {
@@ -599,10 +569,7 @@ removeBox.addEventListener("click", (event) => {
             body: JSON.stringify({
                 secretKey: secretkey,
                 noteId: selectedNote
-            }),
-            headers: {
-                "Content-Type": "application/json; charset=UTF-8"
-            }
+            })
         })
             .then((response) => response)
             .then((response) => {

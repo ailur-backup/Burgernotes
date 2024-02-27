@@ -66,10 +66,7 @@ signupButton.addEventListener("click", (event) => {
             body: JSON.stringify({
                 username: username,
                 password: await hashpass(password)
-            }),
-            headers: {
-                "Content-Type": "application/json; charset=UTF-8"
-            }
+            })
         })
             .then((response) => response)
             .then((response) => {

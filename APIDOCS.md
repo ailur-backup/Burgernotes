@@ -1,7 +1,7 @@
 # Burgernotes API docs
 Use the Burgernotes API to automate tasks, build your own client, and more!
 
-Headers should be: "Content-type: application/json; charset=UTF-8" for all POSTs
+Content-type should be "application/json" for all POSTs
 
 ## Authentication
 
