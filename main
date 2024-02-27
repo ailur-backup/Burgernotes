@@ -122,7 +122,7 @@ async def signup():
 
 @app.route("/login/index.html")
 async def loginrdir():
-    return redirect("/login", code=302")
+    return redirect("/login", code=302)
 @app.route("login")
 async def login():
     return await render_template("login.html")
