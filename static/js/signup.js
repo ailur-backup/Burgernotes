@@ -1,10 +1,10 @@
 if (localStorage.getItem("DONOTSHARE-secretkey") !== null) {
-    window.location.replace("/app")
+    window.location.replace("../app/index.html")
     document.body.innerHTML = "Redirecting..."
     throw new Error();
 }
 if (localStorage.getItem("DONOTSHARE-password") !== null) {
-    window.location.replace("/app")
+    window.location.replace("../app/index.html")
     document.body.innerHTML = "Redirecting..."
     throw new Error();
 }
@@ -61,7 +61,7 @@ signupButton.addEventListener("click", (event) => {
         };
 
 
-        fetch("/api/signup", {
+        fetch("https://notes.hectabit.org/api/signup", {
             method: "POST",
             body: JSON.stringify({
                 username: username,
@@ -81,7 +81,7 @@ signupButton.addEventListener("click", (event) => {
                         localStorage.setItem("DONOTSHARE-secretkey", responseData["key"])
                         localStorage.setItem("DONOTSHARE-password", await hashwasm.sha512(password))
 
-                        window.location.href = "/app"
+                        window.location.href = "../app/index.html"
                     }
                     else if (response.status == 409) {
                         statusBox.innerText = "Username already taken!"

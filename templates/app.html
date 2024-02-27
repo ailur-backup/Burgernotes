@@ -6,8 +6,8 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <link rel="stylesheet" type="text/css" href="/static/css/style.css" />
-    <script type="text/javascript" src="/static/js/crypto-js.js"></script>
+    <link rel="stylesheet" type="text/css" href="../static/css/style.css" />
+    <script type="text/javascript" src="../static/js/crypto-js.js"></script>
 </head>
 
 <body>
@@ -28,7 +28,7 @@
 
     <div id="notesBar" class="notesBar">
         <button id="newNote" class="newNote"><img id="newNoteImage" draggable="false" alt=""
-                src="/static/svg/add.svg">New note</button>
+                src="../static/svg/add.svg">New note</button>
         <div id="notesDiv" class="notesDiv">
             <button class="loadingStuff" id="loadingStuff"></button>
         </div>
@@ -46,10 +46,10 @@
             <p id="storageThing"></p>
             <div class="section"></div>
             <p>Account managment</p>
-            <button id="deleteMyAccountButton"><img src="/static/svg/delete_forever.svg">Delete my account</button>
-            <button id="exportNotesButton"><img src="/static/svg/download.svg">Export notes</button>
-            <button id="sessionManagerButton"><img src="/static/svg/list.svg">Session manager</button>
-            <button class="lastButton" id="logOutButton"><img src="/static/svg/logout.svg">Log out</button>
+            <button id="deleteMyAccountButton"><img src="../static/svg/delete_forever.svg">Delete my account</button>
+            <button id="exportNotesButton"><img src="../static/svg/download.svg">Export notes</button>
+            <button id="sessionManagerButton"><img src="../static/svg/list.svg">Session manager</button>
+            <button class="lastButton" id="logOutButton"><img src="../static/svg/logout.svg">Log out</button>
         </div>
         <div id="sessionManagerDiv" class="optionsDiv hidden">
             <button class="exit" id="exitSessionsThing">X</button>
@@ -70,7 +70,7 @@
 
     <textarea id="noteBox" class="noteBox"></textarea>
 
-    <script type="text/javascript" src="/static/js/main.js"></script>
+    <script type="text/javascript" src="../static/js/main.js"></script>
     <script>
         for (let i = 0; i < 40; i++) {
             notesDiv.appendChild(loadingStuff.cloneNode())
