@@ -261,8 +261,8 @@ body {
     overflow-y: scroll;
 }
 
-.notesBar .noteButton {
-    width: calc(100% - 5px - 5px);
+.notesBar .noteButton, .notesBar .loadingStuff {
+    width: calc(100% - 7px - 7px - 3.5px);
     height: 35px;
     line-height: 0px;
     padding: 10px;
