@@ -661,6 +661,20 @@ body {
 .links a {
     margin-left: 5px;
     text-decoration: none;
+    background-color: #f8f8f8;
+    color: var(--text-color);
+    padding: 10px;
+    border-radius: 10px;
+    transition: background-color .2s;
+}
+
+.links a:hover {
+    background-color: #eaeaea;
+}
+
+.links a img {
+    transform: translateY(5px);
+    padding-right: 10px;
 }
 
 .links a:hover {
