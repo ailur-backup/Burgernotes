@@ -127,6 +127,14 @@ body {
     font-family: "Inter", sans-serif;
 }
 
+.hiddenButton {
+    right: 0px;
+    position: fixed;
+    background-color: var(--editor);
+    color: var(--editor);
+    padding: 20px;
+}
+
 /* Web app */
 .topBar {
     position: fixed;
