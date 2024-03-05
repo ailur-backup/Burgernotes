@@ -2,6 +2,7 @@
 
 :root {
     --invertdm: 0%;
+    --link: #f8f8f8;
     --bar: #f4f4f4;
     --editor: #ffffff;
     --text-color: #000000;
@@ -23,6 +24,7 @@
 @media (prefers-color-scheme: dark) {
     :root {
 	--invertdm: 100%;
+        --link: #5c5c5c;
         --bar: #2d2f31;
         --editor: #202124;
         --text-color: #ffffff;
@@ -669,7 +671,8 @@ body {
 .links a {
     margin-left: 5px;
     text-decoration: none;
-    background-color: #f8f8f8;
+    background-color: var(--link);
+    filter: invert(var(--invertdm));
     color: var(--text-color);
     padding: 10px;
     border-radius: 10px;
