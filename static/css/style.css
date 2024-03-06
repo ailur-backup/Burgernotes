@@ -670,7 +670,6 @@ body {
     margin-left: 5px;
     text-decoration: none;
     background-color: var(--bar);
-    filter: invert(var(--invertdm));
     color: var(--text-color);
     padding: 10px;
     border-radius: 10px;
@@ -684,6 +683,7 @@ body {
 .links a img {
     transform: translateY(5px);
     padding-right: 10px;
+    filter: invert(var(--invertdm));
 }
 
 .links a:hover {
