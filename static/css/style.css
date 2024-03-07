@@ -633,7 +633,6 @@ body {
     text-decoration: none;
     background-color: var(--theme-color);
     border-radius: 8px;
-    box-shadow: gray 4px 4px 16px 1px;
 }
 
 .mainDiv .feature {
@@ -653,7 +652,6 @@ body {
     padding-bottom: 15px;
     font-size: 17px;
     padding-bottom: 30px;
-    box-shadow: gray 4px 4px 16px 1px;
 }
 
 .mainDiv .green {
@@ -677,7 +675,6 @@ body {
     padding: 10px;
     border-radius: 10px;
     transition: background-color .2s;
-    box-shadow: gray 4px 4px 16px 1px;
 }
 
 .links a:hover {
