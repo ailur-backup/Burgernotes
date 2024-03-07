@@ -2,6 +2,7 @@
 
 :root {
     --contrast: #eee;
+    --contrast2: #fff;
     --invertdm: 0%;
     --bar: #f4f4f4;
     --editor: #ffffff;
@@ -25,6 +26,7 @@
     :root {
 	--invertdm: 100%;
         --contrast: #2d2f21;
+        --contrast2: #2d2f21;
         --bar: #2d2f31;
         --editor: #202124;
         --text-color: #ffffff;
@@ -296,7 +298,7 @@ body {
 .notesBar .loadingStuff {
     border: none;
     background:
-    linear-gradient(0.25turn, transparent, var(--editor), transparent),
+    linear-gradient(0.25turn, transparent, var(--contrast2), transparent),
     linear-gradient(var(--contrast), var(--contrast)),
     radial-gradient(38px circle at 19px 19px, #eee 50%, transparent 51%),
     linear-gradient(var(--contrast), var(--contrast));
