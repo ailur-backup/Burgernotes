@@ -210,7 +210,6 @@ body {
 
     background-color: var(--bar);
 
-
     border: solid;
     border-color: var(--border-color);
     border-width: 1px;
@@ -222,19 +221,15 @@ body {
     width: calc(100% - 14px - 4px - 7px);
     color: var(--text-color);
     background-color: #ffffff;
-
     height: 35px;
     line-height: 35px;
     margin: 7px;
     padding-left: 7px;
-
     border: solid;
     border-color: var(--border-color);
     border-width: 1px;
     border-radius: 8px;
-
     font-size: 15px;
-
     text-decoration: none;
 }
 
@@ -260,7 +255,6 @@ body {
     height: calc(100% - 50px - 30px - 1px);
 
     background-color: var(--bar);
-
     border: solid;
     border-color: var(--border-color);
     border-width: 0px;
@@ -288,7 +282,6 @@ body {
     border: solid;
     border-color: var(--border-color);
     border-width: 1px;
-
     font-size: 15px;
 
     text-align: left;
@@ -328,7 +321,6 @@ body {
     background-color: rgba(0, 0, 0, 0);
     border: none;
     font-size: 16px;
-
     margin-bottom: 5px;
     cursor: pointer;
 }
@@ -379,7 +371,7 @@ body {
     border-radius: 8px;
     min-width: 338.5px;
     z-index: 3;
-    box-shadow: grey 4px 4px 16px 1px;
+
 }
 
 .optionsDiv button {
@@ -396,7 +388,7 @@ body {
     background-color: var(--theme-color);
     border-radius: 8px;
     cursor: pointer;
-    box-shadow: grey 4px 4px 16px 1px;
+
 }
 
 .optionsDiv .normalButton {
@@ -526,7 +518,7 @@ body {
 .inoutdiv {
     margin: 10%;
     padding: 15px;
-    box-shadow: grey 4px 4px 16px 1px;
+
     border-radius: 25px;
 }
 
@@ -541,7 +533,7 @@ body {
     border-color: var(--border-color);
     border-width: 1px;
     border-radius: 8px;
-    box-shadow: grey 4px 4px 16px 1px;
+
 }
 
 .inoutdiv button {
@@ -556,7 +548,7 @@ body {
     border-radius: 8px;
 
     font-size: 14px;
-    box-shadow: grey 4px 4px 16px 1px;
+
 }
 
 .inoutdiv a {
