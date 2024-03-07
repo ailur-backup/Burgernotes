@@ -347,7 +347,7 @@ body {
 }
 
 .noteBox:focus {
-    outline: none
+    outline: none;
 }
 
 .optionsCoverDiv {
@@ -517,9 +517,9 @@ body {
 
 .inoutdiv {
     margin: 10%;
-    padding: 15px;
-
+    padding: 30px;
     border-radius: 25px;
+    border: solid 1px var(--border-color);
 }
 
 .inoutdiv input {
