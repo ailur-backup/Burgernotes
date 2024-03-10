@@ -673,8 +673,11 @@ body {
     background-color: var(--bar);
     color: var(--text-color);
     padding: 10px;
+    padding-top: 2.5px;
+    margin-bottom: 10px;
     border-radius: 10px;
     transition: background-color .2s;
+    display: inline-block;
 }
 
 .links a:hover {
