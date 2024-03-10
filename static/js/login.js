@@ -9,6 +9,8 @@ if (localStorage.getItem("DONOTSHARE-password") !== null) {
     throw new Error();
 }
 
+let remote = ""
+
 let usernameBox = document.getElementById("usernameBox")
 let passwordBox = document.getElementById("passwordBox")
 let statusBox = document.getElementById("statusBox")
@@ -109,7 +111,7 @@ signupButton.addEventListener("click", (event) => {
                 return key
             };
 
-            fetch("https://notes.hectabit.org/api/login", {
+            fetch(remote + "/api/login", {
                 method: "POST",
                 body: JSON.stringify({
                     username: username,
@@ -133,7 +135,7 @@ signupButton.addEventListener("click", (event) => {
                         }
                         else if (response.status == 401) {
                             console.log("Trying oldhash")
-                            fetch("https://notes.hectabit.org/api/login", {
+                            fetch(remote + "/api/login", {
                                 method: "POST",
                                 body: JSON.stringify({
                                     username: username,

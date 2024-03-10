@@ -264,7 +264,7 @@ async def apilistnotes():
         user = get_user(userCookie["id"])
 
         conn = get_db_connection()
-        notes = conn.execute("SELECT * FROM notes WHERE creator = ? ORDER BY id DESC;", (user["id"],)).fetchall()
+        notes = conn.execute("SELECT * FROM notes WHERE creator = ? ORDER BY edited DESC;", (user["id"],)).fetchall()
         conn.close()
 
         datatemplate = []
