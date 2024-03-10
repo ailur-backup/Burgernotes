@@ -359,6 +359,14 @@ function updateWordCount() {
     wordCountBox.innerText = wordCount + " words"
 }
 
+function truncateString(str, num) {
+    if (str.length > num) {
+        return str.slice(0, num) + "..";
+    } else {
+        return str;
+    }
+}
+
 function selectNote(nameithink) {
     document.querySelectorAll(".noteButton").forEach((el) => el.classList.remove("selected"));
     let thingArray = Array.from(document.querySelectorAll(".noteButton")).find(el => el.id == nameithink);
@@ -399,6 +407,13 @@ function selectNote(nameithink) {
                     updateWordCount()
                     clearTimeout(timer);
                     timer = setTimeout(() => {
+                        let encryptedTitle = "empty note"
+                        if (noteBox.value != "") {
+                            let firstTitle = truncateString(noteBox.value.slice(0, noteBox.value.indexOf("\n")), 16)
+
+                            document.getElementById(nameithink).innerText = firstTitle
+                            encryptedTitle = CryptoJS.AES.encrypt(firstTitle, password).toString();
+                        }
                         let encryptedText = CryptoJS.AES.encrypt(noteBox.value, password).toString();
 
                         if (selectedNote == nameithink) {
@@ -408,6 +423,7 @@ function selectNote(nameithink) {
                                     secretKey: secretkey,
                                     noteId: nameithink,
                                     content: encryptedText,
+                                    title: encryptedTitle
                                 }),
                                 headers: {
                                     "Content-Type": "application/json; charset=UTF-8"
@@ -494,38 +510,29 @@ function updateNotes() {
 updateNotes()
 
 newNote.addEventListener("click", (event) => {
-    let noteName = displayPrompt("Note name?", "E.G Shopping list", burgerFunction)
-    function burgerFunction(noteName) {
-        if (noteName != null) {
-            if (noteName.length > 21) {
-                displayError("Invalid note name: Too long (max 21 characters)");
-                return;
-            }
-
-            let encryptedName = CryptoJS.AES.encrypt(noteName, password).toString();
-            fetch(remote + "/api/newnote", {
-                method: "POST",
-                body: JSON.stringify({
-                    secretKey: secretkey,
-                    noteName: encryptedName,
-                }),
-                headers: {
-                    "Content-Type": "application/json; charset=UTF-8"
-                }
-            })
-                .catch((error) => {
-                    displayError("Failed to create new note, please try again later...")
-                })
-                .then((response) => {
-                    if (response.status !== 200) {
-                        updateNotes()
-                        displayError("Failed to create new note (HTTP error code " + response.status + ")")
-                    } else {
-                        updateNotes()
-                    }
-                });
+    let noteName = "empty note"
+    let encryptedName = CryptoJS.AES.encrypt(noteName, password).toString();
+    fetch(remote + "/api/newnote", {
+        method: "POST",
+        body: JSON.stringify({
+            secretKey: secretkey,
+            noteName: encryptedName,
+        }),
+        headers: {
+            "Content-Type": "application/json; charset=UTF-8"
         }
-    }
+    })
+        .catch((error) => {
+            displayError("Failed to create new note, please try again later...")
+        })
+        .then((response) => {
+            if (response.status !== 200) {
+                updateNotes()
+                displayError("Failed to create new note (HTTP error code " + response.status + ")")
+            } else {
+                updateNotes()
+            }
+        });
 });
 function downloadObjectAsJson(exportObj, exportName) {
     var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));

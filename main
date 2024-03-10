@@ -354,6 +354,7 @@ async def apieditnote():
         secretKey = data["secretKey"]
         noteId = data["noteId"]
         content = data["content"]
+        title = data["title"]
 
         userCookie = get_session(secretKey)
         user = get_user(userCookie["id"])
@@ -366,7 +367,7 @@ async def apieditnote():
         if (note != None):
             if (user["id"] == note["creator"]):
                 conn = get_db_connection()
-                conn.execute("UPDATE notes SET content = ?, edited = ? WHERE id = ?", (content, str(time.time()), noteId))
+                conn.execute("UPDATE notes SET content = ?, title = ?, edited = ? WHERE id = ?", (content, title, str(time.time()), noteId))
                 conn.commit()
                 conn.close()
 

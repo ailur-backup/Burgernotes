@@ -1,9 +1,9 @@
-# Burgernotes API docs
+# 🍔 Burgernotes API docs
 Use the Burgernotes API to automate tasks, build your own client, and more!
 
 Headers should be: "Content-type: application/json; charset=UTF-8" for all POSTs
 
-## Authentication
+## 🔑 Authentication
 
 POST - /api/signup - provide "username" and "password".
 
@@ -46,13 +46,13 @@ You'll need to store two things in local storage:
 - The secret key you just got, used to fetch notes, save stuff etc.
 - A SHA512 hashed password, used as encryption key
 
-## Encryption
+## 🔐 Encryption
 
 Note content and title is encrypted using AES 256-bit.
 
 Encryption password is the SHA512 hashed password we talked about earlier.
 
-## Basic stuff
+## 🕹️ Basic stuff
 
 POST - /api/userinfo - get user info such as username, provide "secretKey"
 
@@ -65,15 +65,16 @@ POST - /api/newnote - create a note, provide "secretKey" and "noteName"
 POST - /api/readnote - read notes, provide "secretKey" and "noteId"
 note content will have to be decrypted.
 
-POST - /api/editnote - edit notes, provide "secretKey", "noteId", and "content"
+POST - /api/editnote - edit notes, provide "secretKey", "noteId", "title", and "content"
 "content" should be encrypted.
+"title" is the first line of the note content, and should be encrypted. the title should be truncated if it's above 16 characters, meaning "sillyburgermuncher" -> "sillyburgermunch.."
 
-POST - /api/editnotetitle - edit note titles, provide "secretKey", "noteId", and "content"
+**(Deprecated ⚠️)** POST - /api/editnotetitle - edit note titles, provide "secretKey", "noteId", and "content"
 "content" should be encrypted.
 
 POST - /api/removenote - remove notes, provide "secretKey" and "noteId"
 
-## More stuff
+## ⚙️ More stuff
 
 POST - /api/deleteaccount - delete account, provide "secretKey"
 please display a warning before this action
