@@ -11,6 +11,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from quart import Quart, render_template, request, url_for, flash, redirect, session, make_response, send_from_directory, stream_with_context, Response, request
 
 # Parse configuration file, and check if anything is wrong with it
+if not os.path.exists("config.ini"):
+    print("config.ini does not exist")
+
 config = configparser.ConfigParser()
 config.read("config.ini")
 
@@ -19,7 +22,7 @@ PORT = config["config"]["PORT"]
 SECRET_KEY = config["config"]["SECRET_KEY"]
 MAX_STORAGE = config["config"]["MAX_STORAGE"]
 
-if SECRET_KEY == "placeholder":
+if SECRET_KEY == "supersecretkey" or "placeholder":
     print("[WARNING] Secret key not set")
 
 # Define Quart

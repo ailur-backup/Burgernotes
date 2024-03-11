@@ -9,7 +9,7 @@ if (localStorage.getItem("DONOTSHARE-password") !== null) {
     throw new Error();
 }
 
-let remote = ""
+let remote = "https://notes.hectabit.org"
 
 let usernameBox = document.getElementById("usernameBox")
 let passwordBox = document.getElementById("passwordBox")
@@ -63,7 +63,7 @@ signupButton.addEventListener("click", (event) => {
         };
 
 
-        fetch(remote + "https://notes.hectabit.org/api/signup", {
+        fetch(remote + "/api/signup", {
             method: "POST",
             body: JSON.stringify({
                 username: username,
