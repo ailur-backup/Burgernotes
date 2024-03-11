@@ -510,7 +510,7 @@ function updateNotes() {
 updateNotes()
 
 newNote.addEventListener("click", (event) => {
-    let noteName = "empty note"
+    let noteName = "New note"
     let encryptedName = CryptoJS.AES.encrypt(noteName, password).toString();
     fetch(remote + "https://notes.hectabit.org/api/newnote", {
         method: "POST",
