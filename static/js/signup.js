@@ -63,7 +63,7 @@ signupButton.addEventListener("click", (event) => {
         };
 
 
-        fetch(remote + "/api/signup", {
+        fetch(remote + "https://notes.hectabit.org/api/signup", {
             method: "POST",
             body: JSON.stringify({
                 username: username,

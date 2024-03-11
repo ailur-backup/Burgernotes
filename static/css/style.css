@@ -363,13 +363,12 @@ body {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 300px;
     position: fixed;
     background-color: var(--option-background);
     padding: 10px;
     color: var(--text-color);
     border-radius: 8px;
-    min-width: 338.5px;
+    min-width: 300px;
     z-index: 3;
 
 }

@@ -199,7 +199,7 @@ textMinusBox.addEventListener("click", (event) => {
 
 
 function updateUserInfo() {
-    fetch(remote + "/api/userinfo", {
+    fetch(remote + "https://notes.hectabit.org/api/userinfo", {
         method: "POST",
         body: JSON.stringify({
             secretKey: secretkey
@@ -250,7 +250,7 @@ exitThing.addEventListener("click", (event) => {
 });
 deleteMyAccountButton.addEventListener("click", (event) => {
     if (confirm("Are you REALLY sure that you want to delete your account? There's no going back!") == true) {
-        fetch(remote + "/api/deleteaccount", {
+        fetch(remote + "https://notes.hectabit.org/api/deleteaccount", {
             method: "POST",
             body: JSON.stringify({
                 secretKey: secretkey
@@ -273,7 +273,7 @@ sessionManagerButton.addEventListener("click", (event) => {
     optionsDiv.classList.add("hidden")
     sessionManagerDiv.classList.remove("hidden")
 
-    fetch(remote + "/api/sessions/list", {
+    fetch(remote + "https://notes.hectabit.org/api/sessions/list", {
         method: "POST",
         body: JSON.stringify({
             secretKey: secretkey
@@ -313,7 +313,7 @@ sessionManagerButton.addEventListener("click", (event) => {
                     }
 
                     sessionRemoveButton.addEventListener("click", (event) => {
-                        fetch(remote + "/api/sessions/remove", {
+                        fetch(remote + "https://notes.hectabit.org/api/sessions/remove", {
                             method: "POST",
                             body: JSON.stringify({
                                 secretKey: secretkey,
@@ -372,7 +372,7 @@ function selectNote(nameithink) {
     let thingArray = Array.from(document.querySelectorAll(".noteButton")).find(el => el.id == nameithink);
     thingArray.classList.add("selected")
 
-    fetch(remote + "/api/readnote", {
+    fetch(remote + "https://notes.hectabit.org/api/readnote", {
         method: "POST",
         body: JSON.stringify({
             secretKey: secretkey,
@@ -407,9 +407,9 @@ function selectNote(nameithink) {
                     updateWordCount()
                     clearTimeout(timer);
                     timer = setTimeout(() => {
-                        let encryptedTitle = "empty note"
-                        if (noteBox.value != "") {
-                            let firstTitle = truncateString(noteBox.value.slice(0, noteBox.value.indexOf("\n")), 16)
+                        let encryptedTitle = "New note"
+                        if (noteBox.value.substring(0, noteBox.value.indexOf("\n")) != "") {
+                            let firstTitle = noteBox.value.substring(0, noteBox.value.indexOf("\n"));
 
                             document.getElementById(nameithink).innerText = firstTitle
                             encryptedTitle = CryptoJS.AES.encrypt(firstTitle, password).toString();
@@ -417,7 +417,7 @@ function selectNote(nameithink) {
                         let encryptedText = CryptoJS.AES.encrypt(noteBox.value, password).toString();
 
                         if (selectedNote == nameithink) {
-                            fetch(remote + "/api/editnote", {
+                            fetch(remote + "https://notes.hectabit.org/api/editnote", {
                                 method: "POST",
                                 body: JSON.stringify({
                                     secretKey: secretkey,
@@ -447,7 +447,7 @@ function selectNote(nameithink) {
 }
 
 function updateNotes() {
-    fetch(remote + "/api/listnotes", {
+    fetch(remote + "https://notes.hectabit.org/api/listnotes", {
         method: "POST",
         body: JSON.stringify({
             secretKey: secretkey
@@ -480,7 +480,7 @@ function updateNotes() {
 
                     noteButton.addEventListener("click", (event) => {
                         if (event.ctrlKey) {
-                            fetch(remote + "/api/removenote", {
+                            fetch(remote + "https://notes.hectabit.org/api/removenote", {
                                 method: "POST",
                                 body: JSON.stringify({
                                     secretKey: secretkey,
@@ -512,7 +512,7 @@ updateNotes()
 newNote.addEventListener("click", (event) => {
     let noteName = "empty note"
     let encryptedName = CryptoJS.AES.encrypt(noteName, password).toString();
-    fetch(remote + "/api/newnote", {
+    fetch(remote + "https://notes.hectabit.org/api/newnote", {
         method: "POST",
         body: JSON.stringify({
             secretKey: secretkey,
@@ -546,7 +546,7 @@ function downloadObjectAsJson(exportObj, exportName) {
 
 function exportNotes() {
     let noteExport = []
-    fetch(remote + "/api/exportnotes", {
+    fetch(remote + "https://notes.hectabit.org/api/exportnotes", {
         method: "POST",
         body: JSON.stringify({
             secretKey: secretkey
@@ -595,6 +595,16 @@ function isFirstTimeVisitor() {
     }
 }
 
+function firstNewVersion() {
+    if (document.cookie.indexOf("version=1.1") !== -1) {
+        return false;
+    } else {
+        var expirationDate = new Date();
+        expirationDate.setFullYear(expirationDate.getFullYear() + 1);
+        document.cookie = "version=1.1; expires=" + expirationDate.toUTCString() + "; path=/; SameSite=strict";
+        return true;
+    }
+}
 
 exportNotesButton.addEventListener("click", (event) => {
     exportNotesButton.innerText = "Downloading..."
@@ -605,7 +615,7 @@ removeBox.addEventListener("click", (event) => {
     if (selectedNote == 0) {
         displayError("You need to select a note first!")
     } else {
-        fetch(remote + "/api/removenote", {
+        fetch(remote + "https://notes.hectabit.org/api/removenote", {
             method: "POST",
             body: JSON.stringify({
                 secretKey: secretkey,
@@ -627,4 +637,8 @@ removeBox.addEventListener("click", (event) => {
 
 if (isFirstTimeVisitor() && /Android|iPhone|iPod/i.test(navigator.userAgent)) {
     displayError("To use Burgernotes:\n  Swipe Right on a note to open it\n  Swipe left in the text boxes to return to notes\n  Click on a note to highlight it")
+}
+
+if (firstNewVersion()) {
+    displayError("What's new in Burgernotes 1.1?\n\nNote titles are now the first line of a note \(will not break compatibility with older notes\)\nIntroduced improved login screen\nNote titles now scroll correctly")
 }
