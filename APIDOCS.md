@@ -67,7 +67,7 @@ note content will have to be decrypted.
 
 POST - /api/editnote - edit notes, provide "secretKey", "noteId", "title", and "content"
 "content" should be encrypted.
-"title" is the first line of the note content, and should be encrypted. the title should be truncated if it's above 16 characters, meaning "sillyburgermuncher" -> "sillyburgermunch.."
+"title" is the first line of the note content, and should be encrypted.
 
 **(Deprecated ⚠️)** POST - /api/editnotetitle - edit note titles, provide "secretKey", "noteId", and "content"
 "content" should be encrypted.

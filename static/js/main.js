@@ -198,6 +198,15 @@ textMinusBox.addEventListener("click", (event) => {
 });
 
 
+function truncateString(str, num) {
+    if (str.length > num) {
+        return str.slice(0, num) + "..";
+    } else {
+        return str;
+    }
+}
+
+
 function updateUserInfo() {
     fetch(remote + "/api/userinfo", {
         method: "POST",
@@ -259,7 +268,6 @@ deleteMyAccountButton.addEventListener("click", (event) => {
                 "Content-Type": "application/json; charset=UTF-8"
             }
         })
-            .then((response) => response)
             .then((response) => {
                 if (response.status == 200) {
                     window.location.href = "../logout/index.html"
@@ -282,7 +290,6 @@ sessionManagerButton.addEventListener("click", (event) => {
             "Content-Type": "application/json; charset=UTF-8"
         }
     })
-        .then((response) => response)
         .then((response) => {
             async function doStuff() {
                 let responseData = await response.json()
@@ -294,9 +301,9 @@ sessionManagerButton.addEventListener("click", (event) => {
                     let sessionRemoveButton = document.createElement("button")
                     sessionText.classList.add("w300")
                     if (responseData[i]["thisSession"] == true) {
-                        sessionText.innerText = "(current) " + truncateString(responseData[i]["device"], 18)
+                        sessionText.innerText = "(current) " + responseData[i]["device"]
                     } else {
-                        sessionText.innerText = truncateString(responseData[i]["device"], 27)
+                        sessionText.innerText = responseData[i]["device"]
                     }
                     sessionText.title = responseData[i]["device"]
                     sessionRemoveButton.innerText = "x"
@@ -323,7 +330,6 @@ sessionManagerButton.addEventListener("click", (event) => {
                                 "Content-Type": "application/json; charset=UTF-8"
                             }
                         })
-                            .then((response) => response)
                             .then((response) => {
                                 if (responseData[i]["thisSession"] == true) {
                                     window.location.replace("../logout/index.html")
@@ -359,14 +365,6 @@ function updateWordCount() {
     wordCountBox.innerText = wordCount + " words"
 }
 
-function truncateString(str, num) {
-    if (str.length > num) {
-        return str.slice(0, num) + "..";
-    } else {
-        return str;
-    }
-}
-
 function selectNote(nameithink) {
     document.querySelectorAll(".noteButton").forEach((el) => el.classList.remove("selected"));
     let thingArray = Array.from(document.querySelectorAll(".noteButton")).find(el => el.id == nameithink);
@@ -388,7 +386,6 @@ function selectNote(nameithink) {
             noteBox.placeholder = ""
             displayError("Something went wrong... Please try again later!")
         })
-        .then((response) => response)
         .then((response) => {
             selectedNote = nameithink
             noteBox.readOnly = false
@@ -429,7 +426,6 @@ function selectNote(nameithink) {
                                     "Content-Type": "application/json; charset=UTF-8"
                                 }
                             })
-                                .then((response) => response)
                                 .then((response) => {
                                     if (response.status == 418) {
                                         displayError("You've ran out of storage... Changes will not be saved until you free up storage!")
@@ -476,7 +472,7 @@ function updateNotes() {
                     let originalTitle = bytes.toString(CryptoJS.enc.Utf8);
 
                     noteButton.id = responseData[i]["id"]
-                    noteButton.innerText = originalTitle
+                    noteButton.innerText = truncateString(originalTitle, 15)
 
                     noteButton.addEventListener("click", (event) => {
                         if (event.ctrlKey) {
@@ -555,7 +551,6 @@ function exportNotes() {
             "Content-Type": "application/json; charset=UTF-8"
         }
     })
-        .then((response) => response)
         .then((response) => {
             async function doStuff() {
                 let responseData = await response.json()
@@ -615,7 +610,6 @@ removeBox.addEventListener("click", (event) => {
                 "Content-Type": "application/json; charset=UTF-8"
             }
         })
-            .then((response) => response)
             .then((response) => {
                 updateNotes()
             })
