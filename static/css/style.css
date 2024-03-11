@@ -56,7 +56,7 @@
     }
 
     .newNote img {
-        filter: invert(100%)
+        filter: invert(100%);
     }
 
     #errorDiv p {
@@ -68,7 +68,7 @@
     }
 
     .burgerSession img {
-        filter: invert(100%) !important
+        filter: invert(100%) !important;
     }
 
     .links a {
@@ -85,16 +85,16 @@
 
     .inoutdiv input {
         color: white;
-        background-color: #202124;
+        background-color: var(--editor);
     }
 
     .flathubLogo {
-        filter: invert(100%)
+        filter: invert(100%);
     }
 
     .feature {
         background-color: rgba(0, 0, 0, 0) !important;
-        color: var(--text-color)
+        color: var(--text-color);
     }
     .mainDiv .yellow {
         border-color: #e9e98d !important;
@@ -363,13 +363,12 @@ body {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 300px;
     position: fixed;
     background-color: var(--option-background);
     padding: 10px;
     color: var(--text-color);
     border-radius: 8px;
-    min-width: 338.5px;
+    min-width: 300px;
     z-index: 3;
 
 }
@@ -403,7 +402,7 @@ body {
 .optionsDiv input {
     width: calc(100% - 12px);
     height: 25px;
-    background-color: ffffff;
+    background-color: #ffffff;
     padding-left: 5px;
     padding-right: 5px;
     margin-bottom: 7px;
@@ -520,6 +519,7 @@ body {
     padding: 30px;
     border-radius: 25px;
     border: solid 1px var(--border-color);
+    background-color: var(--bar);
 }
 
 .inoutdiv input {

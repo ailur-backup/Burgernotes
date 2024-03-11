@@ -111,7 +111,7 @@ signupButton.addEventListener("click", (event) => {
                 return key
             };
 
-            fetch(remote + "/api/login", {
+            fetch(remote + "https://notes.hectabit.org/api/login", {
                 method: "POST",
                 body: JSON.stringify({
                     username: username,
@@ -135,7 +135,7 @@ signupButton.addEventListener("click", (event) => {
                         }
                         else if (response.status == 401) {
                             console.log("Trying oldhash")
-                            fetch(remote + "/api/login", {
+                            fetch(remote + "https://notes.hectabit.org/api/login", {
                                 method: "POST",
                                 body: JSON.stringify({
                                     username: username,

@@ -1,0 +1,5 @@
+[config]
+HOST = 0.0.0.0
+PORT = 8080
+SECRET_KEY = supersecretkey
+MAX_STORAGE = 25000000
