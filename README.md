@@ -8,11 +8,13 @@ cp config.ini.example config.ini
 python3 init_db
 ```
 
+In login.js, main.js, signup.js, make sure to set the "remote" variable to "".
+
+
 Edit config.ini to your liking, then to start the server run:
 ```
 python3 main
 ```
-
 ### Links
 [Go to the Burgernotes website](https://notes.hectabit.org)
 
