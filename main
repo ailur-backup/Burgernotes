@@ -115,6 +115,14 @@ async def mainrdir():
 async def main():
     return await render_template("main.html")
 
+# Homeserver changer
+@app.route("/homeserver/index.html")
+async def mainrdir():
+    return redirect("/", code=302)
+@app.route("/homeserver")
+async def main():
+    return await render_template("homeserver.html")
+
 # Web app
 @app.route("/app/index.html")
 async def apprdir():
@@ -149,7 +157,7 @@ async def privacy():
 # API
 @app.route("/api/version", methods=("GET", "POST"))
 async def apiversion():
-    return "Burgernotes Version 1.1"
+    return "Burgernotes Version 1.2"
 
 @app.route("/api/signup", methods=("GET", "POST"))
 async def apisignup():
