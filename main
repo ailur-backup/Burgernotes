@@ -117,10 +117,10 @@ async def main():
 
 # Homeserver changer
 @app.route("/homeserver/index.html")
-async def mainrdir():
+async def homeserverrdir():
     return redirect("/", code=302)
 @app.route("/homeserver")
-async def main():
+async def homeserver():
     return await render_template("homeserver.html")
 
 # Web app
