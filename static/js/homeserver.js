@@ -17,7 +17,7 @@ changeButton.addEventListener("click", (event) => {
     async function doStuff() {
         let remote = homeserverBox.value
 
-        if (username == "") {
+        if (remote == "") {
             statusBox.innerText = "A homeserver is required!"
             return
         }
@@ -29,8 +29,6 @@ changeButton.addEventListener("click", (event) => {
             .then((response) => response)
             .then((response) => {
                 async function doStuff() {
-                    let responseData = await response.json()
-
                     if (response.status == 200) {
                         localStorage.setItem("homeserverURL", remote)
 

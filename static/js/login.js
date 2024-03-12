@@ -72,7 +72,7 @@ function showElements(yesorno) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById("homeserver").innerText = "Your homeserver is: " + origin + ". "
+    document.getElementById("homeserver").innerText = "Your homeserver is: " + remote + ". "
 });
 
 signupButton.addEventListener("click", (event) => {
