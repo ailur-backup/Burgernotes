@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Signup - Burgernotes</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" type="text/css" href="../static/css/style.css">
+    <script src="../static/js/hash-wasm.js"></script>
+  <style>
+        body {
+            background-color: #d9d9d9;
+            background-image: url("/static/svg/grid.svg");
+            background-repeat: repeat;
+            background-size: 312px
+        }
+        .inoutdiv {
+            background-color: #fff;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="inoutdiv">
+        <h2 class="w300">Homeserver</h2>
+        <p>Change your Burgernotes homeserver</p>
+        <p id="statusBox"></p>
+
+        <input type="text" value="https://" id="homeserverBox"><br>
+        <button id="changeButton">Change</button><br><br>
+        <p>Please put in the URL in standard format; https://, http://, etc.</p>
+    </div>
+
+    <script type="text/javascript" src="../static/js/signup.js"></script>
+</body>
+
+</html>

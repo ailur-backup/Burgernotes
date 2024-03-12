@@ -13,7 +13,11 @@ if (localStorage.getItem("CACHE-username") !== null) {
     document.getElementById("usernameBox").innerText = localStorage.getItem("CACHE-username")
 }
 
-let remote = "https://notes.hectabit.org"
+let remote = localStorage.getItem("homeserverURL")
+if (remote == null) {
+    localStorage.setItem("homeserverURL", "https://notes.hectabit.org")
+    remote = "https://notes.hectabit.org"
+}
 
 function formatBytes(a, b = 2) { if (!+a) return "0 Bytes"; const c = 0 > b ? 0 : b, d = Math.floor(Math.log(a) / Math.log(1000)); return `${parseFloat((a / Math.pow(1000, d)).toFixed(c))} ${["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"][d]}` }
 

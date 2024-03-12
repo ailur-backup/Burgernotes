@@ -9,7 +9,11 @@ if (localStorage.getItem("DONOTSHARE-password") !== null) {
     throw new Error();
 }
 
-let remote = "https://notes.hectabit.org"
+let remote = localStorage.getItem("homeserverURL")
+if (remote == null) {
+    localStorage.setItem("homeserverURL", "https://notes.hectabit.org")
+    remote = "https://notes.hectabit.org"
+}
 
 let usernameBox = document.getElementById("usernameBox")
 let passwordBox = document.getElementById("passwordBox")
