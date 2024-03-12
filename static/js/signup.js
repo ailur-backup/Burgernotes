@@ -15,6 +15,11 @@ if (remote == null) {
     remote = "https://notes.hectabit.org"
 }
 
+const queryString = window.location.search;
+if (queryString == "?redirect") {
+    location.reload();
+}
+
 let usernameBox = document.getElementById("usernameBox")
 let passwordBox = document.getElementById("passwordBox")
 let statusBox = document.getElementById("statusBox")

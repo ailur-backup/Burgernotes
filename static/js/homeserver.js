@@ -32,7 +32,7 @@ changeButton.addEventListener("click", (event) => {
                     if (response.status == 200) {
                         localStorage.setItem("homeserverURL", remote)
 
-                        history.back()
+                        window.location.href = document.referrer + "?refresh";
                     }
                     else if (response.status == 404) {
                         statusBox.innerText = "Not a valid homeserver!"
