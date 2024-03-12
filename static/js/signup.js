@@ -33,6 +33,10 @@ function showElements(yesorno) {
     }
 }
 
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById("homeserver").innerText = "Your homeserver is: " + origin + ". "
+});
+
 signupButton.addEventListener("click", (event) => {
     async function doStuff() {
         let username = usernameBox.value
