@@ -22,7 +22,7 @@ PORT = config["config"]["PORT"]
 SECRET_KEY = config["config"]["SECRET_KEY"]
 MAX_STORAGE = config["config"]["MAX_STORAGE"]
 
-if SECRET_KEY == "supersecretkey" or "placeholder":
+if SECRET_KEY == "supersecretkey" or SECRET_KEY == "placeholder":
     print("[WARNING] Secret key not set")
 
 # Define Quart
