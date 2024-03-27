@@ -267,6 +267,27 @@ async def apiexportnotes():
             datatemplate.append(notetemplate)
 
         return datatemplate, 200
+    
+@app.route("/api/importnotes", methods=("GET", "POST"))
+async def apiimportnotes():
+    if request.method == "POST":
+        data = await request.get_json()
+        notesData = data["notesData"]
+        secretKey = data["secretKey"]
+
+        userCookie = get_session(secretKey)
+        user = get_user(userCookie["id"])
+
+        if(user):
+            for note in notesData:
+                conn = get_db_connection()
+                conn.execute("INSERT INTO notes (title, content, creator, created, edited) VALUES (?, ?, ?, ?, ?)",
+                         (note["title"], note["content"], user["id"], str(note["created"]), str(str(note["edited"]))))
+                conn.commit()
+                conn.close()
+            return {}, 200
+        else:
+            return {}, 403
 
 @app.route("/api/newnote", methods=("GET", "POST"))
 async def apinewnote():
