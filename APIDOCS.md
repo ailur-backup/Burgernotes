@@ -15,7 +15,7 @@ If you wish to change the user's password, set "passwordchange" to "yes" and "ne
 
 
 Some users use the legacy argon2id mode (by which i mean about 8, so only implement if you feel like it), and to implement argon2id functionality, you hash like this:
-
+```
 Parallelism should be 1
 
 Iterations should be 256
@@ -27,7 +27,7 @@ Length of Hash should be 32 bytes
 The output should be in the encoded format, not the hashed format
 
 Salt should be the SHA512 of the password
-
+```
 
 (Yes i know this is really bad practice, guess why we are replacing it)
 
