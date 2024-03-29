@@ -320,16 +320,25 @@ async def waitforedit():
         secretKey = data["secretKey"]
         userCookie = get_session(secretKey)
         user = get_user(userCookie["id"])
+        complete = true
 
+        start_time = time.time()
         while user["id"] not in messages or not messages[user["id"]]:
             await asyncio.sleep(0)
+            elapsed_time = time.time() - start_time
+            if elapsed_time >= 20:
+                break
+                complete = false
 
         message = messages[user["id"]].pop(0)
         del messages[user["id"]]
 
-        return {
-            "note": message
-        }, 200
+        if complete == true:
+            return {
+                "note": message
+            }, 200
+        else:
+            return 400
 
 @app.route("/api/editnote", methods=("GET", "POST"))
 async def apieditnote():
