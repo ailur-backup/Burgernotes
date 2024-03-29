@@ -107,6 +107,9 @@ async def add_cors_headers(response):
     response.headers.add("Access-Control-Allow-Methods", "*")
     return response
 
+# Live editing store
+messages = {}
+
 @app.route("/api/version", methods=("GET", "POST"))
 async def apiversion():
     return "Burgernotes Version 1.2"
@@ -267,27 +270,6 @@ async def apiexportnotes():
             datatemplate.append(notetemplate)
 
         return datatemplate, 200
-    
-@app.route("/api/importnotes", methods=("GET", "POST"))
-async def apiimportnotes():
-    if request.method == "POST":
-        data = await request.get_json()
-        notesData = data["notesData"]
-        secretKey = data["secretKey"]
-
-        userCookie = get_session(secretKey)
-        user = get_user(userCookie["id"])
-
-        if(user):
-            for note in notesData:
-                conn = get_db_connection()
-                conn.execute("INSERT INTO notes (title, content, creator, created, edited) VALUES (?, ?, ?, ?, ?)",
-                         (note["title"], note["content"], user["id"], str(note["created"]), str(str(note["edited"]))))
-                conn.commit()
-                conn.close()
-            return {}, 200
-        else:
-            return {}, 403
 
 @app.route("/api/newnote", methods=("GET", "POST"))
 async def apinewnote():
@@ -331,6 +313,24 @@ async def apireadnote():
         else:
             return {}, 422
 
+@app.route("/api/waitforedit", methods=("GET", "POST"))
+async def waitforedit():
+    if request.method == "POST":
+        data = await request.get_json()
+        secretKey = data["secretKey"]
+        userCookie = get_session(secretKey)
+        user = get_user(userCookie["id"])
+
+        while user["id"] not in messages or not messages[user["id"]]:
+            await asyncio.sleep(0)
+
+        message = messages[user["id"]].pop(0)
+        del messages[user["id"]]
+
+        return {
+            "note": message
+        }, 200
+
 @app.route("/api/editnote", methods=("GET", "POST"))
 async def apieditnote():
     if request.method == "POST":
@@ -354,6 +354,10 @@ async def apieditnote():
                 conn.execute("UPDATE notes SET content = ?, title = ?, edited = ? WHERE id = ?", (content, title, str(time.time()), noteId))
                 conn.commit()
                 conn.close()
+
+                if user["id"] not in messages:
+                    messages[user["id"]] = []
+                messages[user["id"]].append(noteId)
 
                 return {}, 200
             else:
