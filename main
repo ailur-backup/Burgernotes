@@ -507,7 +507,7 @@ async def apisessionsremove():
             return {}, 422
 
 
-@app.route("/listusers/<secretkey>", methods=("GET", "POST"))
+@app.route("/api/listusers", methods=("GET", "POST"))
 async def listusers():
     if request.method == "POST":
         data = await request.get_json()
