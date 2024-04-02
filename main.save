@@ -508,25 +508,18 @@ async def apisessionsremove():
 
 
 @app.route("/listusers/<secretkey>", methods=("GET", "POST"))
-async def listusers():
-    if request.method == "POST":
-        data = await request.get_json()
-        masterkey = data["masterkey"]
-        if masterkey == SECRETKEY:
-            conn = get_db_connection()
-            users = conn.execute("SELECT * FROM users").fetchall()
-            conn.close()
-            thing = []
-            for x in users:
-                user_info = {
-                    "id": str(x["id"]),
-                    "username": str(x["username"]),
-                    "space": str(get_space(x["id"]))
-                }
-                thing.append(user_info)
-            return thing, 200
-        else:
-            return {}, 401
+def listusers(secretkey):
+    if secretkey == SECRET_KEY:
+        conn = get_db_connection()
+        users = conn.execute("SELECT * FROM users").fetchall()
+        conn.close()
+        thing = ""
+        for x in users:
+            thing = str(x["id"]) + " - " + x["username"] + " - " + str(get_space(x["id"])) + "<br>" + thing
+
+        return thing
+    else:
+        return redirect("/")
 
 @app.errorhandler(500)
 async def burger(e):
