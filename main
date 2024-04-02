@@ -512,7 +512,7 @@ async def listusers():
     if request.method == "POST":
         data = await request.get_json()
         masterkey = data["masterkey"]
-        if masterkey == SECRETKEY:
+        if masterkey == SECRET_KEY:
             conn = get_db_connection()
             users = conn.execute("SELECT * FROM users").fetchall()
             conn.close()
