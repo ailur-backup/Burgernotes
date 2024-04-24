@@ -144,15 +144,12 @@ async def apisignup():
         conn = get_db_connection()
         conn.execute("INSERT INTO users (username, password, created) VALUES (?, ?, ?)",
                      (username, hashedpassword, str(time.time())))
-        conn.commit()
-        conn.close()
 
         userID = check_username_taken(username)
         user = get_user(userID)
 
         randomCharacters = secrets.token_hex(512)
 
-        conn = get_db_connection()
         conn.execute("INSERT INTO sessions (session, id, device) VALUES (?, ?, ?)",
                      (randomCharacters, userID, request.headers.get("user-agent")))
         conn.commit()
@@ -187,15 +184,13 @@ async def apilogin():
         conn = get_db_connection()
         conn.execute("INSERT INTO sessions (session, id, device) VALUES (?, ?, ?)",
                      (randomCharacters, userID, request.headers.get("user-agent")))
-        conn.commit()
-        conn.close()
 
         if passwordchange == "yes":
             hashedpassword = generate_password_hash(newpass)
-            conn = get_db_connection()
             conn.execute("UPDATE users SET password = ? WHERE username = ?", (hashedpassword, username))
-            conn.commit()
-            conn.close()
+
+        conn.commit()
+        conn.close()
 
         return {
             "key": randomCharacters,
@@ -442,10 +437,6 @@ async def apideleteaccount():
 
         conn = get_db_connection()
         conn.execute("DELETE FROM notes WHERE creator = ?", (userCookie["id"],))
-        conn.commit()
-        conn.close()
-
-        conn = get_db_connection()
         conn.execute("DELETE FROM users WHERE id = ?", (userCookie["id"],))
         conn.commit()
         conn.close()
