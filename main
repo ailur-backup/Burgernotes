@@ -12,10 +12,12 @@ from quart import Quart, request, url_for, flash, redirect, session, make_respon
 
 # Parse configuration file, and check if anything is wrong with it
 if not os.path.exists("config.ini"):
-    print("config.ini does not exist")
+    print("[FATAL] config.ini does not exist")
+    exit(1)
 
 config = configparser.ConfigParser()
 config.read("config.ini")
+print("[INFO] Config loaded at", str(int(time.time())))
 
 HOST = config["config"]["HOST"]
 PORT = config["config"]["PORT"]
@@ -23,7 +25,7 @@ SECRET_KEY = config["config"]["SECRET_KEY"]
 MAX_STORAGE = config["config"]["MAX_STORAGE"]
 
 if SECRET_KEY == "supersecretkey" or SECRET_KEY == "placeholder":
-    print("[WARNING] Secret key not set")
+    print("[WARNING] Secret key not set. Please set the secret key to a non-default value.")
 
 # Define Quart
 app = Quart(__name__)
@@ -532,6 +534,6 @@ hypercornconfig = Config()
 hypercornconfig.bind = (HOST + ":" + PORT)
 
 if __name__ == "__main__":
-    print("[INFO] Server started")
+    print("[INFO] Server started at", str(int(time.time())))
+    print("[INFO] Welcome to Burgernotes! Today we are running on IP " + HOST + " on port " + PORT + ".")
     asyncio.run(serve(app, hypercornconfig))
-    print("[INFO] Server stopped")
