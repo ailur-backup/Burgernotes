@@ -22,5 +22,5 @@ CREATE TABLE sessions (
     sessionid INTEGER PRIMARY KEY AUTOINCREMENT,
     session TEXT NOT NULL,
     id INTEGER NOT NULL,
-    device TEXT NOT NULL DEFAULT "?"
+    device TEXT NOT NULL DEFAULT '?'
 );

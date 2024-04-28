@@ -14,7 +14,7 @@ To prevent the server from knowing the encryption key, the password you provide 
 If you wish to change the user's password, set "passwordchange" to "yes" and "newpass" to the new hash.
 
 
-Some users use the legacy argon2id mode (by which i mean about 8, so only implement if you feel like it), and to implement argon2id functionality, you hash like this:
+Some users use the legacy argon2 id mode (by which I mean about 8, so only implement if you feel like it), and to implement argon2 id functionality, you hash like this:
 ```
 Parallelism should be 1
 
@@ -29,7 +29,7 @@ The output should be in the encoded format, not the hashed format
 Salt should be the SHA512 of the password
 ```
 
-(Yes i know this is really bad practice, guess why we are replacing it)
+(Yes I know these are really awful practice, guess why we are replacing it)
 
 To test if SHA-3 or argon2 is used, just try the SHA-3 and if 422 gets returned try argon2.
 

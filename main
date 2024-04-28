@@ -8,7 +8,7 @@ import asyncio
 from hypercorn.config import Config
 from hypercorn.asyncio import serve
 from werkzeug.security import generate_password_hash, check_password_hash
-from quart import Quart, request, url_for, flash, redirect, session, make_response, send_from_directory, stream_with_context, Response, request
+from quart import Quart, request
 
 # Parse configuration file, and check if anything is wrong with it
 if not os.path.exists("config.ini"):
@@ -31,33 +31,38 @@ if SECRET_KEY == "supersecretkey" or SECRET_KEY == "placeholder":
 app = Quart(__name__)
 app.config["SECRET_KEY"] = SECRET_KEY
 
+
 # Database functions
 def get_db_connection():
     conn = sqlite3.connect("database.db")
     conn.row_factory = sqlite3.Row
     return conn
 
-def get_user(id):
+
+def get_user(identifier):
     conn = get_db_connection()
     post = conn.execute("SELECT * FROM users WHERE id = ?",
-                        (id,)).fetchone()
+                        (identifier,)).fetchone()
     conn.close()
     if post is None:
         return None
     return post
 
-def get_note(id):
+
+def get_note(identifier):
     conn = get_db_connection()
     post = conn.execute("SELECT * FROM notes WHERE id = ?",
-                        (id,)).fetchone()
+                        (identifier,)).fetchone()
     conn.close()
     if post is None:
         return None
     return post
 
-def get_space(id):
+
+def get_space(identifier):
     conn = get_db_connection()
-    notes = conn.execute("SELECT content, title FROM notes WHERE creator = ? ORDER BY id DESC;", (id,)).fetchall()
+    notes = conn.execute("SELECT content, title FROM notes WHERE creator = ? ORDER BY id DESC;",
+                         (identifier,)).fetchall()
     conn.close()
     spacetaken = 0
     for x in notes:
@@ -65,32 +70,34 @@ def get_space(id):
         spacetaken = spacetaken + len(x["title"].encode("utf-8"))
     return spacetaken
 
-def get_note_count(id):
-    conn = get_db_connection()
-    notes = conn.execute("SELECT content, title FROM notes WHERE creator = ? ORDER BY id DESC;", (id,)).fetchall()
-    conn.close()
-    notecount = 0
-    for x in notes:
-        notecount = notecount + 1
-    return notecount
 
-def get_session(id):
+def get_note_count(identifier):
+    conn = get_db_connection()
+    notes = conn.execute("SELECT content, title FROM notes WHERE creator = ? ORDER BY id DESC;",
+                         (identifier,)).fetchall()
+    conn.close()
+    return len(notes)
+
+
+def get_session(identifier):
     conn = get_db_connection()
     post = conn.execute("SELECT * FROM sessions WHERE session = ?",
-                        (id,)).fetchone()
+                        (identifier,)).fetchone()
     conn.close()
     if post is None:
         return None
     return post
 
-def get_session_from_sessionid(id):
+
+def get_session_from_sessionid(identifier):
     conn = get_db_connection()
     post = conn.execute("SELECT * FROM sessions WHERE sessionid = ?",
-                        (id,)).fetchone()
+                        (identifier,)).fetchone()
     conn.close()
     if post is None:
         return None
     return post
+
 
 def check_username_taken(username):
     conn = get_db_connection()
@@ -101,6 +108,7 @@ def check_username_taken(username):
         return None
     return post["id"]
 
+
 # Disable CORS
 @app.after_request
 async def add_cors_headers(response):
@@ -109,12 +117,15 @@ async def add_cors_headers(response):
     response.headers.add("Access-Control-Allow-Methods", "*")
     return response
 
+
 # Live editing store
 messages = {}
+
 
 @app.route("/api/version", methods=("GET", "POST"))
 async def apiversion():
     return "Burgernotes Version 1.2"
+
 
 @app.route("/api/signup", methods=("GET", "POST"))
 async def apisignup():
@@ -138,7 +149,7 @@ async def apisignup():
         if len(password) < 14:
             return {}, 422
 
-        if not check_username_taken(username) == None:
+        if not check_username_taken(username) is None:
             return {}, 409
 
         hashedpassword = generate_password_hash(password)
@@ -148,7 +159,6 @@ async def apisignup():
                      (username, hashedpassword, str(time.time())))
 
         userID = check_username_taken(username)
-        user = get_user(userID)
 
         randomCharacters = secrets.token_hex(512)
 
@@ -161,6 +171,7 @@ async def apisignup():
             "key": randomCharacters
         }, 200
 
+
 @app.route("/api/login", methods=("GET", "POST"))
 async def apilogin():
     if request.method == "POST":
@@ -172,13 +183,13 @@ async def apilogin():
 
         check_username_thing = check_username_taken(username)
 
-        if check_username_thing == None:
+        if check_username_thing is None:
             return {}, 401
 
         userID = check_username_taken(username)
         user = get_user(userID)
 
-        if not check_password_hash(user["password"], (password)):
+        if not check_password_hash(user["password"], password):
             return {}, 401
 
         randomCharacters = secrets.token_hex(512)
@@ -217,6 +228,7 @@ async def apiuserinfo():
         }
         return datatemplate
 
+
 @app.route("/api/listnotes", methods=("GET", "POST"))
 async def apilistnotes():
     if request.method == "POST":
@@ -240,6 +252,7 @@ async def apilistnotes():
             datatemplate.append(notetemplate)
 
         return datatemplate, 200
+
 
 @app.route("/api/exportnotes", methods=("GET", "POST"))
 async def apiexportnotes():
@@ -268,6 +281,7 @@ async def apiexportnotes():
 
         return datatemplate, 200
 
+
 @app.route("/api/newnote", methods=("GET", "POST"))
 async def apinewnote():
     if request.method == "POST":
@@ -280,11 +294,12 @@ async def apinewnote():
 
         conn = get_db_connection()
         conn.execute("INSERT INTO notes (title, content, creator, created, edited) VALUES (?, ?, ?, ?, ?)",
-                         (noteName, "", user["id"], str(time.time()), str(time.time())))
+                     (noteName, "", user["id"], str(time.time()), str(time.time())))
         conn.commit()
         conn.close()
 
         return {}, 200
+
 
 @app.route("/api/readnote", methods=("GET", "POST"))
 async def apireadnote():
@@ -298,8 +313,8 @@ async def apireadnote():
 
         note = get_note(noteId)
 
-        if (note != None):
-            if (user["id"] == note["creator"]):
+        if note is not None:
+            if user["id"] == note["creator"]:
                 contenttemplate = {
                     "content": note["content"]
                 }
@@ -310,6 +325,7 @@ async def apireadnote():
         else:
             return {}, 422
 
+
 @app.route("/api/waitforedit", methods=("GET", "POST"))
 async def waitforedit():
     if request.method == "POST":
@@ -317,25 +333,26 @@ async def waitforedit():
         secretKey = data["secretKey"]
         userCookie = get_session(secretKey)
         user = get_user(userCookie["id"])
-        complete = true
+        complete = True
 
         start_time = time.time()
         while user["id"] not in messages or not messages[user["id"]]:
             await asyncio.sleep(0)
             elapsed_time = time.time() - start_time
             if elapsed_time >= 20:
+                complete = False
                 break
-                complete = false
 
         message = messages[user["id"]].pop(0)
         del messages[user["id"]]
 
-        if complete == true:
+        if complete:
             return {
                 "note": message
             }, 200
         else:
             return 400
+
 
 @app.route("/api/editnote", methods=("GET", "POST"))
 async def apieditnote():
@@ -354,10 +371,11 @@ async def apieditnote():
         if get_space(user["id"]) + len(content.encode("utf-8")) > int(MAX_STORAGE):
             return {}, 418
 
-        if (note != None):
-            if (user["id"] == note["creator"]):
+        if note is not None:
+            if user["id"] == note["creator"]:
                 conn = get_db_connection()
-                conn.execute("UPDATE notes SET content = ?, title = ?, edited = ? WHERE id = ?", (content, title, str(time.time()), noteId))
+                conn.execute("UPDATE notes SET content = ?, title = ?, edited = ? WHERE id = ?",
+                             (content, title, str(time.time()), noteId))
                 conn.commit()
                 conn.close()
 
@@ -388,8 +406,8 @@ async def apieditnotetitle():
         if get_space(user["id"]) + len(content.encode("utf-8")) > int(MAX_STORAGE):
             return {}, 418
 
-        if (note != None):
-            if (user["id"] == note["creator"]):
+        if note is not None:
+            if user["id"] == note["creator"]:
                 conn = get_db_connection()
                 conn.execute("UPDATE notes SET title = ?, edited = ? WHERE id = ?", (content, str(time.time()), noteId))
                 conn.commit()
@@ -414,8 +432,8 @@ async def apiremovenote():
 
         note = get_note(noteId)
 
-        if (note != None):
-            if (user["id"] == note["creator"]):
+        if note is not None:
+            if user["id"] == note["creator"]:
                 conn = get_db_connection()
                 conn.execute("DELETE FROM notes WHERE id = ?", (noteId,))
                 conn.commit()
@@ -435,7 +453,6 @@ async def apideleteaccount():
         secretKey = data["secretKey"]
 
         userCookie = get_session(secretKey)
-        user = get_user(userCookie["id"])
 
         conn = get_db_connection()
         conn.execute("DELETE FROM notes WHERE creator = ?", (userCookie["id"],))
@@ -444,6 +461,7 @@ async def apideleteaccount():
         conn.close()
 
         return {}, 200
+
 
 @app.route("/api/sessions/list", methods=("GET", "POST"))
 async def apisessionslist():
@@ -463,7 +481,7 @@ async def apisessionslist():
         for x in sessions:
             device = x["device"]
             thisSession = False
-            if (x["session"] == secretKey):
+            if x["session"] == secretKey:
                 thisSession = True
             sessiontemplate = {
                 "id": x["sessionid"],
@@ -473,6 +491,7 @@ async def apisessionslist():
             datatemplate.append(sessiontemplate)
 
         return datatemplate, 200
+
 
 @app.route("/api/sessions/remove", methods=("GET", "POST"))
 async def apisessionsremove():
@@ -486,8 +505,8 @@ async def apisessionsremove():
 
         session = get_session_from_sessionid(sessionId)
 
-        if (session != None):
-            if (user["id"] == session["id"]):
+        if session is not None:
+            if user["id"] == session["id"]:
                 conn = get_db_connection()
                 conn.execute("DELETE FROM sessions WHERE sessionid = ?", (session["sessionid"],))
                 conn.commit()
@@ -521,13 +540,16 @@ async def listusers():
         else:
             return {}, 401
 
+
 @app.errorhandler(500)
-async def burger(e):
+async def burger():
     return {}, 500
 
+
 @app.errorhandler(404)
-async def burger(e):
+async def burger():
     return {}, 404
+
 
 # Start server
 hypercornconfig = Config()
