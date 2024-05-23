@@ -9,6 +9,7 @@ from hypercorn.config import Config
 from hypercorn.asyncio import serve
 from werkzeug.security import generate_password_hash, check_password_hash
 from quart import Quart, request
+from json import loads
 
 # Parse configuration file, and check if anything is wrong with it
 if not os.path.exists("config.ini"):
@@ -281,6 +282,25 @@ async def apiexportnotes():
 
         return datatemplate, 200
 
+@app.route("/api/importnotes", methods=("GET", "POST"))
+async def importnotes():
+    if request.method == "POST":
+        data = await request.get_json()
+        secretKey = data["secretKey"]
+        notes = data["notes"]
+
+        userCookie = get_session(secretKey)
+        user = get_user(userCookie["id"])
+
+        conn = get_db_connection()
+        notejson = loads(notes)
+        for note in notejson:
+            conn.execute("INSERT INTO notes (title, content, creator, created, edited) VALUES (?, ?, ?, ?, ?)",
+                         (note["title"], note["content"], note["id"], note["created"], note["edited"])
+        conn.commit()
+        conn.close()
+
+        return {}, 200
 
 @app.route("/api/newnote", methods=("GET", "POST"))
 async def apinewnote():
