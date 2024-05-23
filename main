@@ -290,13 +290,12 @@ async def importnotes():
         notes = data["notes"]
 
         userCookie = get_session(secretKey)
-        user = get_user(userCookie["id"])
 
         conn = get_db_connection()
         notejson = loads(notes)
         for note in notejson:
             conn.execute("INSERT INTO notes (title, content, creator, created, edited) VALUES (?, ?, ?, ?, ?)",
-                         (note["title"], note["content"], note["id"], note["created"], note["edited"])
+                         (note["title"], note["content"], userCookie["id"], note["created"], note["edited"]))
         conn.commit()
         conn.close()
 
