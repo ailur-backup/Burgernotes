@@ -229,6 +229,13 @@ async def apiuserinfo():
         }
         return datatemplate
 
+@app.route("/api/loggedin", methods=("GET", "POST"))
+async def apiloggedin():
+    if request.method == "POST":
+        data = await request.get_json()
+        secretKey = data["secretKey"]
+        get_session(secretKey)
+        return 200
 
 @app.route("/api/listnotes", methods=("GET", "POST"))
 async def apilistnotes():
