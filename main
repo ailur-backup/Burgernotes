@@ -234,8 +234,10 @@ async def apiloggedin():
     if request.method == "POST":
         data = await request.get_json()
         secretKey = data["secretKey"]
-        get_session(secretKey)
-        return 200
+        if get_session(secretKey) != None:
+            return {}, 200
+        else:
+            return {}, 400
 
 @app.route("/api/listnotes", methods=("GET", "POST"))
 async def apilistnotes():
