@@ -523,7 +523,7 @@ async def apisessionsremove():
         if userCookie is not None:
             if user["id"] == userCookie["id"]:
                 conn = get_db_connection()
-                conn.execute("DELETE FROM sessions WHERE sessionid = ?", (userCookie["sessionid"],))
+                conn.execute("DELETE FROM sessions WHERE sessionid = ?", (sessionId,))
                 conn.commit()
                 conn.close()
 
