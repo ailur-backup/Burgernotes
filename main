@@ -89,17 +89,6 @@ def get_session(identifier):
         return None
     return post
 
-
-def get_session_from_sessionid(identifier):
-    conn = get_db_connection()
-    post = conn.execute("SELECT * FROM sessions WHERE sessionid = ?",
-                        (identifier,)).fetchone()
-    conn.close()
-    if post is None:
-        return None
-    return post
-
-
 def check_username_taken(username):
     conn = get_db_connection()
     post = conn.execute("SELECT * FROM users WHERE lower(username) = ?",
@@ -531,12 +520,10 @@ async def apisessionsremove():
         userCookie = get_session(secretKey)
         user = get_user(userCookie["id"])
 
-        session = get_session_from_sessionid(sessionId)
-
-        if session is not None:
-            if user["id"] == session["id"]:
+        if userCookie is not None:
+            if user["id"] == userCookie["id"]:
                 conn = get_db_connection()
-                conn.execute("DELETE FROM sessions WHERE sessionid = ?", (session["sessionid"],))
+                conn.execute("DELETE FROM sessions WHERE sessionid = ?", (userCookie["sessionid"],))
                 conn.commit()
                 conn.close()
 
