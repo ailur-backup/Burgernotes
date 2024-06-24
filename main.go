@@ -372,10 +372,10 @@ func main() {
 		}
 
 		if !enableAPIVersion2 {
-			_, err = conn.Exec("INSERT INTO users (username, password, versionTwoLegacyPassword, created) VALUES (?, ?, ?)", username, hashedPasswd, "nil", strconv.FormatInt(time.Now().Unix(), 10))
+			_, err = conn.Exec("INSERT INTO users (username, password, versionTwoLegacyPassword, created) VALUES (?, ?, ?, ?)", username, hashedPasswd, "nil", strconv.FormatInt(time.Now().Unix(), 10))
 		} else {
 			legacyPassword := data["legacyPassword"].(string)
-			_, err = conn.Exec("INSERT INTO users (username, password, versionTwoLegacyPassword, created) VALUES (?, ?, ?)", username, hashedPasswd, legacyPassword, strconv.FormatInt(time.Now().Unix(), 10))
+			_, err = conn.Exec("INSERT INTO users (username, password, versionTwoLegacyPassword, created) VALUES (?, ?, ?, ?)", username, hashedPasswd, legacyPassword, strconv.FormatInt(time.Now().Unix(), 10))
 		}
 
 		if err != nil {
