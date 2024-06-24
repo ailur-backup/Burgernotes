@@ -714,7 +714,7 @@ func main() {
 			return
 		}
 
-		rows, err := conn.Query("SELECT id, title FROM notes WHERE creator = ? ORDER BY edited DESC", userid)
+		rows, err := conn.Query("SELECT id, title FROM notes WHERE creator = ? ORDER BY id DESC", userid)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				c.JSON(200, []map[string]interface{}{})
