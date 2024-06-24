@@ -20,6 +20,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/scrypt"
+	"golang.org/x/crypto/sha3"
 )
 
 var (
@@ -48,6 +49,17 @@ func genSalt(length int) (string, error) {
 		salt[i] = saltChars[int(randomBytes[i])%len(saltChars)]
 	}
 	return string(salt), nil
+}
+
+func hashSha3(iterations int, input string) string {
+	key := input
+	for i := 0; i < iterations; i++ {
+		hash := sha3.New512()
+		hash.Write([]byte(key))
+		keyBytes := hash.Sum(nil)
+		key = hex.EncodeToString(keyBytes)
+	}
+	return key
 }
 
 func hash(password, salt string) (string, error) {
@@ -193,6 +205,34 @@ func initDb() {
 	}
 }
 
+func migrateDb() {
+	_, err := os.Stat("database.db")
+	if os.IsNotExist(err) {
+		err = generateDB()
+		if err != nil {
+			log.Fatalln("[FATAL] Unknown while generating database at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
+		}
+	} else {
+		log.Println("[PROMPT] Proceeding will render the database unusable for older versions of Burgernotes. Proceed? (y/n): ")
+		var answer string
+		_, err := fmt.Scanln(&answer)
+		if err != nil {
+			log.Fatalln("[FATAL] Unknown while scanning input at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
+		}
+		if strings.ToLower(answer) == "y" {
+			_, err := conn.Exec("ALTER TABLE users ADD COLUMN versionTwoLegacyPassword TEXT NOT NULL DEFAULT 'nil'")
+			if err != nil {
+				log.Fatalln("[FATAL] Unknown while migrating database at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
+				return
+			}
+		} else if answer == ":3" {
+			log.Println("[:3] :3")
+		} else {
+			log.Println("[INFO] Stopped")
+		}
+	}
+}
+
 func main() {
 	if _, err := os.Stat("config.ini"); err == nil {
 		log.Println("[INFO] Config loaded at", time.Now().Unix())
@@ -249,6 +289,9 @@ func main() {
 		if os.Args[1] == "init_db" {
 			initDb()
 			os.Exit(0)
+		} else if os.Args[1] == "migrate_db" {
+			migrateDb()
+			os.Exit(0)
 		}
 	}
 
@@ -285,6 +328,20 @@ func main() {
 		username := data["username"].(string)
 		password := data["password"].(string)
 
+		enableAPIVersion2 := false
+		versionCheck := c.GetHeader("X-Burgernotes-Version")
+		if versionCheck != "" {
+			versionCheckInt, err := strconv.Atoi(versionCheck)
+			if err != nil {
+				log.Println("[ERROR] Unknown in /api/login versionCheck at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
+				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SIGNUP-VERSIONCHECK"})
+				return
+			}
+			if versionCheckInt > 199 {
+				enableAPIVersion2 = true
+			}
+		}
+
 		if username == "" || password == "" || len(username) > 20 || !regexp.MustCompile("^[a-zA-Z0-9]+$").MatchString(username) {
 			c.JSON(422, gin.H{"error": "Invalid username or password"})
 			return
@@ -314,7 +371,13 @@ func main() {
 			return
 		}
 
-		_, err = conn.Exec("INSERT INTO users (username, password, created) VALUES (?, ?, ?)", username, hashedPasswd, strconv.FormatInt(time.Now().Unix(), 10))
+		if !enableAPIVersion2 {
+			_, err = conn.Exec("INSERT INTO users (username, password, versionTwoLegacyPassword, created) VALUES (?, ?, ?)", username, hashedPasswd, "nil", strconv.FormatInt(time.Now().Unix(), 10))
+		} else {
+			legacyPassword := data["legacyPassword"].(string)
+			_, err = conn.Exec("INSERT INTO users (username, password, versionTwoLegacyPassword, created) VALUES (?, ?, ?)", username, hashedPasswd, legacyPassword, strconv.FormatInt(time.Now().Unix(), 10))
+		}
+
 		if err != nil {
 			log.Println("[ERROR] Unknown in /api/signup Exec() at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
 			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SIGNUP-DBINSERT"})
@@ -354,6 +417,28 @@ func main() {
 			return
 		}
 
+		enableAPIVersion2 := false
+		enableAPIVersion1 := false
+		version1PasswordChange := data["passwordchange"].(string)
+		versionCheck := c.GetHeader("X-Burgernotes-Version")
+		if versionCheck != "" {
+			versionCheckInt, err := strconv.Atoi(versionCheck)
+			if err != nil {
+				log.Println("[ERROR] Unknown in /api/login versionCheck at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
+				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LOGIN-VERSIONCHECK"})
+				return
+			}
+			if versionCheckInt > 199 {
+				enableAPIVersion2 = true
+			}
+		} else {
+			if version1PasswordChange != "" {
+				enableAPIVersion1 = true
+			} else {
+				enableAPIVersion1 = false
+			}
+		}
+
 		username := data["username"].(string)
 		password := data["password"].(string)
 
@@ -367,27 +452,76 @@ func main() {
 			return
 		}
 
-		_, _, hashedPasswd, err := getUser(userid)
-		if err != nil {
-			log.Println("[ERROR] Unknown in /api/login getUser() at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LOGIN-GETUSER"})
-			return
-		}
-
-		correctPassword, err := verifyHash(hashedPasswd, password)
-		if err != nil {
-			if errors.Is(err, errors.New("invalid hash format")) {
-				c.JSON(500, gin.H{"error": "Invalid hash format"})
+		if enableAPIVersion1 || version1PasswordChange != "" {
+			salt, err := genSalt(16)
+			if err != nil {
+				log.Println("[ERROR] Unknown in /api/login genSalt() at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
+				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LOGIN-SALT"})
 				return
-			} else {
-				log.Println("[ERROR] Unknown in /api/login verifyHash() at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LOGIN-VERIFYHASH"})
+			}
+			hashedPassword, err := hash(version1PasswordChange, salt)
+			if err != nil {
+				log.Println("[ERROR] Unknown in /api/login hash() at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
+				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LOGIN-HASH"})
+				return
+			}
+			_, err = conn.Exec("UPDATE users SET password = ? WHERE id = ?", hashedPassword, userid)
+			if err != nil {
+				log.Println("[ERROR] Unknown in /api/login Exec() at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
+				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LOGIN-DBUPDATE"})
 				return
 			}
 		}
-		if !correctPassword {
-			c.JSON(401, gin.H{"error": "Incorrect password"})
-			return
+
+		if enableAPIVersion2 || enableAPIVersion1 {
+			_, _, hashedPasswd, err := getUser(userid)
+			if err != nil {
+				log.Println("[ERROR] Unknown in /api/login getUser() at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
+				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LOGIN-GETUSER"})
+				return
+			}
+
+			correctPassword, err := verifyHash(hashedPasswd, password)
+			if err != nil {
+				if errors.Is(err, errors.New("invalid hash format")) {
+					c.JSON(422, gin.H{"error": "Invalid hash format"})
+					return
+				} else {
+					log.Println("[ERROR] Unknown in /api/login verifyHash() at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
+					c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LOGIN-VERIFYHASH"})
+					return
+				}
+			}
+			if !correctPassword {
+				c.JSON(401, gin.H{"error": "Incorrect password"})
+				return
+			}
+		} else {
+			var legacyPassword string
+			err = conn.QueryRow("SELECT versionTwoLegacyPassword FROM users WHERE id = ?", userid).Scan(&legacyPassword)
+			if err != nil {
+				log.Println("[ERROR] Unknown in /api/login legacyPassword query at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
+				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LOGIN-LEGACYQUERY"})
+				return
+			}
+			hashedPassword := hashSha3(128, password)
+
+			correctPassword, err := verifyHash(hashedPassword, password)
+			if err != nil {
+				if errors.Is(err, errors.New("invalid hash format")) {
+					c.JSON(422, gin.H{"error": "Invalid hash format"})
+					return
+				} else {
+					log.Println("[ERROR] Unknown in /api/login verifyHash() legacy at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
+					c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LOGIN-VERIFYHASH"})
+					return
+				}
+			}
+
+			if !correctPassword {
+				c.JSON(401, gin.H{"error": "Incorrect password"})
+				return
+			}
 		}
 
 		token, err := genSalt(512)
@@ -404,7 +538,106 @@ func main() {
 			return
 		}
 
-		c.JSON(200, gin.H{"key": token})
+		if enableAPIVersion2 {
+			var legacyPassword string
+			err = conn.QueryRow("SELECT versionTwoLegacyPassword FROM users WHERE id = ?", userid).Scan(&legacyPassword)
+			if err != nil {
+				log.Println("[ERROR] Unknown in /api/login legacyPassword query at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
+				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LOGIN-LEGACYQUERY"})
+				return
+			}
+			if legacyPassword != "nil" {
+				c.JSON(200, gin.H{"key": token, "legacyPasswordNeeded": true})
+			} else {
+				c.JSON(200, gin.H{"key": token, "legacyPasswordNeeded": false})
+			}
+			return
+		} else {
+			c.JSON(200, gin.H{"key": token})
+		}
+	})
+
+	router.POST("/api/v2/addlegacypassword", func(c *gin.Context) {
+		var data map[string]interface{}
+		err := c.ShouldBindJSON(&data)
+		if err != nil {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
+
+		versionCheck := c.GetHeader("X-Burgernotes-Version")
+		if versionCheck != "" {
+			versionCheckInt, err := strconv.Atoi(versionCheck)
+			if err != nil {
+				log.Println("[ERROR] Unknown in /api/login versionCheck at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
+				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-ADDLEGACYPASSWORD-VERSIONCHECK"})
+				return
+			}
+			if versionCheckInt < 200 {
+				c.JSON(400, gin.H{"error": "This API can only be accessed by Burgernotes 2.0 and above"})
+				return
+			}
+		} else {
+			c.JSON(400, gin.H{"error": "This API can only be accessed by Burgernotes 2.0 and above"})
+			return
+		}
+
+		token := data["secretKey"].(string)
+		legacyPassword := data["legacyPassword"].(string)
+		_, userid, err := getSession(token)
+		if err != nil {
+			c.JSON(401, gin.H{"error": "Invalid session"})
+			return
+		}
+
+		_, err = conn.Exec("UPDATE users SET versionTwoLegacyPassword = ? WHERE id = ?", legacyPassword, userid)
+		if err != nil {
+			log.Println("[ERROR] Unknown in /api/login/addlegacypassword Exec() at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
+			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LOGIN-ADDLEGACYPASSWORD"})
+			return
+		}
+
+		c.JSON(200, gin.H{"success": true})
+	})
+
+	router.POST("/api/changepassword", func(c *gin.Context) {
+		var data map[string]interface{}
+		err := c.ShouldBindJSON(&data)
+		if err != nil {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
+
+		token := data["secretKey"].(string)
+		newPassword := data["newPassword"].(string)
+
+		_, userid, err := getSession(token)
+		if err != nil {
+			c.JSON(401, gin.H{"error": "Invalid session"})
+			return
+		}
+
+		salt, err := genSalt(16)
+		if err != nil {
+			log.Println("[ERROR] Unknown in /api/changepassword genSalt() at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
+			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-CHANGEPASSWORD-SALT"})
+			return
+		}
+		hashedPassword, err := hash(newPassword, salt)
+		if err != nil {
+			log.Println("[ERROR] Unknown in /api/changepassword hash() at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
+			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-CHANGEPASSWORD-HASH"})
+			return
+		}
+
+		_, err = conn.Exec("UPDATE users SET password = ? WHERE id = ?", hashedPassword, userid)
+		if err != nil {
+			log.Println("[ERROR] Unknown in /api/changepassword Exec() at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
+			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-CHANGEPASSWORD-DBUPDATE"})
+			return
+		}
+
+		c.JSON(200, gin.H{"success": true})
 	})
 
 	router.POST("/api/userinfo", func(c *gin.Context) {

@@ -6,7 +6,8 @@ CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     created TEXT NOT NULL,
     username TEXT NOT NULL,
-    password TEXT NOT NULL
+    password TEXT NOT NULL,
+    versionTwoLegacyPassword TEXT NOT NULL DEFAULT 'nil',
 );
 
 CREATE TABLE notes (
