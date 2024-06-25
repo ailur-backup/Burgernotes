@@ -333,7 +333,7 @@ func main() {
 		if versionCheck != "" {
 			versionCheckInt, err := strconv.Atoi(versionCheck)
 			if err != nil {
-				log.Println("[ERROR] Unknown in /api/login versionCheck at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
+				log.Println("[ERROR] Unknown in /api/signup versionCheck at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
 				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SIGNUP-VERSIONCHECK"})
 				return
 			}
@@ -452,7 +452,7 @@ func main() {
 			return
 		}
 
-		if enableAPIVersion1 || version1PasswordChange != "" {
+		if enableAPIVersion1 || version1PasswordChange != "no" {
 			salt, err := genSalt(16)
 			if err != nil {
 				log.Println("[ERROR] Unknown in /api/login genSalt() at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
