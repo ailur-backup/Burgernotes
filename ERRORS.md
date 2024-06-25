@@ -18,7 +18,7 @@ There are 5 different log levels, with differing amounts of urgency
 
 | INFO | WARN | ERROR | CRITICAL | FATAL | PROMPT |
 |---|---|---|---|---|---|
-| Usually harmless infomation, like a user being created | A warning about bad practices being used, such as having an unset config option | An error that disrupts user experience and may lead to undesired client-side behaviour | An error that affects all users on the platform | An error sevear enough to warrent crashing the server process | Anything that asks the user for input, like a confirmation dialog (typically has no timestamp) |
+| Usually harmless infomation, like a user being created | A warning about bad practices being used, such as having an unset config option | An error that disrupts user experience and may lead to undesired client-side behaviour | An error that affects all users on the platform | An error critical enough to warrent crashing the server process, usually something like the server being unable to bind to an IP or not being able to create the database | Anything that asks the user for input, like a confirmation dialog (typically has no timestamp) |
 
 ## Error reporting
 
