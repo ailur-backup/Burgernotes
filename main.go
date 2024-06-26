@@ -325,8 +325,16 @@ func main() {
 			return
 		}
 
-		username := data["username"].(string)
-		password := data["password"].(string)
+		username, ok := data["username"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
+		password, ok := data["password"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
 
 		enableAPIVersion2 := false
 		versionCheck := c.GetHeader("X-Burgernotes-Version")
@@ -374,8 +382,24 @@ func main() {
 		if !enableAPIVersion2 {
 			_, err = conn.Exec("INSERT INTO users (username, password, versionTwoLegacyPassword, created) VALUES (?, ?, ?, ?)", username, hashedPasswd, "nil", strconv.FormatInt(time.Now().Unix(), 10))
 		} else {
-			legacyPassword := data["legacyPassword"].(string)
-			_, err = conn.Exec("INSERT INTO users (username, password, versionTwoLegacyPassword, created) VALUES (?, ?, ?, ?)", username, hashedPasswd, legacyPassword, strconv.FormatInt(time.Now().Unix(), 10))
+			legacyPassword, ok := data["legacyPassword"].(string)
+			if !ok {
+				c.JSON(400, gin.H{"error": "Invalid JSON"})
+				return
+			}
+			salt, err := genSalt(16)
+			if err != nil {
+				log.Println("[ERROR] Unknown in /api/signup genSalt() at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
+				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SIGNUP-SALT"})
+				return
+			}
+			legacyPasswordHash, err := hash(legacyPassword, salt)
+			if err != nil {
+				log.Println("[ERROR] Unknown in /api/signup hash() at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
+				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SIGNUP-HASH"})
+				return
+			}
+			_, err = conn.Exec("INSERT INTO users (username, password, versionTwoLegacyPassword, created) VALUES (?, ?, ?, ?)", username, hashedPasswd, legacyPasswordHash, strconv.FormatInt(time.Now().Unix(), 10))
 		}
 
 		if err != nil {
@@ -419,7 +443,7 @@ func main() {
 
 		enableAPIVersion2 := false
 		enableAPIVersion1 := false
-		version1PasswordChange := data["newpass"].(string)
+		version1PasswordChange, _ := data["newpass"].(string)
 		versionCheck := c.GetHeader("X-Burgernotes-Version")
 		if versionCheck != "" {
 			versionCheckInt, err := strconv.Atoi(versionCheck)
@@ -439,8 +463,16 @@ func main() {
 			}
 		}
 
-		username := data["username"].(string)
-		password := data["password"].(string)
+		username, ok := data["username"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
+		password, ok := data["password"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
 
 		userid, taken, err := checkUsernameTaken(username)
 		if !taken {
@@ -502,8 +534,7 @@ func main() {
 				return
 			}
 		}
-		
-		
+
 		if enableAPIVersion1 && version1PasswordChange != "null" {
 			salt, err := genSalt(16)
 			if err != nil {
@@ -583,8 +614,16 @@ func main() {
 			return
 		}
 
-		token := data["secretKey"].(string)
-		legacyPassword := data["legacyPassword"].(string)
+		token, ok := data["secretKey"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
+		legacyPassword, ok := data["legacyPassword"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
 		_, userid, err := getSession(token)
 		if err != nil {
 			c.JSON(401, gin.H{"error": "Invalid session"})
@@ -609,8 +648,16 @@ func main() {
 			return
 		}
 
-		token := data["secretKey"].(string)
-		newPassword := data["newPassword"].(string)
+		token, ok := data["secretKey"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
+		newPassword, ok := data["newPassword"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
 
 		_, userid, err := getSession(token)
 		if err != nil {
@@ -649,7 +696,11 @@ func main() {
 			return
 		}
 
-		token := data["secretKey"].(string)
+		token, ok := data["secretKey"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
 		_, userid, err := getSession(token)
 		if err != nil {
 			c.JSON(401, gin.H{"error": "Invalid session"})
@@ -687,7 +738,11 @@ func main() {
 			return
 		}
 
-		token := data["secretKey"].(string)
+		token, ok := data["secretKey"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
 		_, userid, err := getSession(token)
 		if err != nil {
 			c.JSON(401, gin.H{"error": "Invalid session"})
@@ -708,7 +763,11 @@ func main() {
 			return
 		}
 
-		token := data["secretKey"].(string)
+		token, ok := data["secretKey"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
 		_, userid, err := getSession(token)
 		if err != nil {
 			c.JSON(401, gin.H{"error": "Invalid session"})
@@ -763,7 +822,11 @@ func main() {
 			return
 		}
 
-		token := data["secretKey"].(string)
+		token, ok := data["secretKey"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
 		_, userid, err := getSession(token)
 		if err != nil {
 			c.JSON(401, gin.H{"error": "Invalid session"})
@@ -818,8 +881,16 @@ func main() {
 			return
 		}
 
-		token := data["secretKey"].(string)
-		notesStr := data["notes"].(string)
+		token, ok := data["secretKey"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
+		notesStr, ok := data["notes"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
 
 		_, userid, err := getSession(token)
 		if err != nil {
@@ -855,8 +926,16 @@ func main() {
 			return
 		}
 
-		token := data["secretKey"].(string)
-		noteName := data["noteName"].(string)
+		token, ok := data["secretKey"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
+		noteName, ok := data["noteName"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
 		_, userid, err := getSession(token)
 		if err != nil {
 			c.JSON(401, gin.H{"error": "Invalid session"})
@@ -887,8 +966,17 @@ func main() {
 			return
 		}
 
-		token := data["secretKey"].(string)
-		noteId := int(data["noteId"].(float64))
+		token, ok := data["secretKey"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
+		noteIdFloat, ok := data["noteId"].(float64)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
+		noteId := int(noteIdFloat)
 
 		_, userid, err := getSession(token)
 		if err != nil {
@@ -924,10 +1012,27 @@ func main() {
 			return
 		}
 
-		token := data["secretKey"].(string)
-		noteId := int(data["noteId"].(float64))
-		content := data["content"].(string)
-		title := data["title"].(string)
+		token, ok := data["secretKey"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
+		noteIdFloat, ok := data["noteId"].(float64)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
+		noteId := int(noteIdFloat)
+		content, ok := data["content"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
+		title, ok := data["title"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
 
 		_, userid, err := getSession(token)
 		if err != nil {
@@ -970,8 +1075,17 @@ func main() {
 			return
 		}
 
-		token := data["secretKey"].(string)
-		noteId := int(data["noteId"].(float64))
+		token, ok := data["secretKey"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
+		noteIdFloat, ok := data["noteId"].(float64)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
+		noteId := int(noteIdFloat)
 
 		_, userid, err := getSession(token)
 		if err != nil {
@@ -1014,7 +1128,11 @@ func main() {
 			return
 		}
 
-		token := data["secretKey"].(string)
+		token, ok := data["secretKey"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
 
 		_, userid, err := getSession(token)
 		if err != nil {
@@ -1054,7 +1172,11 @@ func main() {
 			return
 		}
 
-		token := data["secretKey"].(string)
+		token, ok := data["secretKey"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
 
 		_, userid, err := getSession(token)
 		if err != nil {
@@ -1114,8 +1236,17 @@ func main() {
 			return
 		}
 
-		token := data["secretKey"].(string)
-		sessionId := int(data["sessionId"].(float64))
+		token, ok := data["secretKey"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
+		sessionIdFloat, ok := data["sessionId"].(float64)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
+		sessionId := int(sessionIdFloat)
 
 		_, userid, err := getSession(token)
 		if err != nil {
@@ -1158,7 +1289,11 @@ func main() {
 			return
 		}
 
-		masterToken := data["masterkey"].(string)
+		masterToken, ok := data["masterkey"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
 		if masterToken == secretKey {
 			rows, err := conn.Query("SELECT id, username, created FROM users ORDER BY id DESC")
 			if err != nil {
