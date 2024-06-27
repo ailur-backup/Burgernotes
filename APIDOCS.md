@@ -72,13 +72,16 @@ POST - /api/editnote - edit notes, provide "secretKey", "noteId", "title", and "
 
 POST - /api/removenote - remove notes, provide "secretKey" and "noteId"
 
-## ⚙️ Account managment
+POST - /api/purgenotes - remove all notes, provide "secretKey"
+### Please display a warning before this action
+
+## ⚙️ Account management
 
 POST - /api/changepassword - change account password, provide "secretKey", "newPassword"
 encrypt the same way as /api/login
 
 POST - /api/deleteaccount - delete account, provide "secretKey"
-please display a warning before this action
+### Please display a warning before this action
 
 POST - /api/exportnotes - export notes, provide "secretKey"
 note content and title will have to be decrypted

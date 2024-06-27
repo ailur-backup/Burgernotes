@@ -1004,6 +1004,36 @@ func main() {
 		}
 	})
 
+	router.POST("/api/purgenotes", func(c *gin.Context) {
+		var data map[string]interface{}
+		err := c.ShouldBindJSON(&data)
+		if err != nil {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
+
+		token, ok := data["secretKey"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
+
+		_, userid, err := getSession(token)
+		if err != nil {
+			c.JSON(401, gin.H{"error": "Invalid session"})
+			return
+		}
+
+		_, err = conn.Exec("DELETE FROM notes WHERE creator = ?", userid)
+		if err != nil {
+			log.Println("[ERROR] Unknown in /api/purgenotes Exec() at", strconv.FormatInt(time.Now().Unix(), 10)+":", err)
+			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-PURGENOTES-DBDELETE"})
+			return
+		} else {
+			c.JSON(200, gin.H{"success": true})
+		}
+	})
+
 	router.POST("/api/editnote", func(c *gin.Context) {
 		var data map[string]interface{}
 		err := c.ShouldBindJSON(&data)
