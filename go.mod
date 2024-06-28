@@ -1,13 +1,13 @@
 module hectabit.org/burgernotes
 
-go 1.22.2
+go 1.22
 
 require (
 	github.com/gin-contrib/sessions v1.0.1
 	github.com/gin-gonic/gin v1.10.0
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/spf13/viper v1.19.0
-	golang.org/x/crypto v0.24.0
+	golang.org/x/crypto v0.23.0
 )
 
 require (
