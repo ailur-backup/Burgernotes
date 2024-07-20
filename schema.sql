@@ -1,6 +1,6 @@
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS notes;
-DROP TABLE IF EXISTS sessions;
+DROP TABLE IF EXISTS oauth;
 
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -16,13 +16,6 @@ CREATE TABLE notes (
     edited TEXT NOT NULL,
     content TEXT NOT NULL,
     title TEXT NOT NULL
-);
-
-CREATE TABLE sessions (
-    sessionid INTEGER PRIMARY KEY AUTOINCREMENT,
-    session TEXT NOT NULL,
-    id INTEGER NOT NULL,
-    device TEXT NOT NULL DEFAULT '?'
 );
 
 CREATE TABLE oauth (

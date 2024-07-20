@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/catalinc/hashcash"
 	"log"
 	"os"
 	"regexp"
@@ -24,6 +25,7 @@ import (
 
 var (
 	conn       *sql.DB
+	mem        *sql.DB
 	host       string
 	port       int
 	secretKey  string
@@ -133,7 +135,7 @@ func checkUsernameTaken(username string) (int, bool, error) {
 func getSession(session string) (int, int, error) {
 	var id int
 	var sessionId int
-	err := conn.QueryRow("SELECT sessionid, id FROM sessions WHERE session = ? LIMIT 1", session).Scan(&sessionId, &id)
+	err := mem.QueryRow("SELECT sessionid, id FROM sessions WHERE session = ? LIMIT 1", session).Scan(&sessionId, &id)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -143,7 +145,7 @@ func getSession(session string) (int, int, error) {
 func getSessionFromId(sessionId int) (string, int, error) {
 	var id int
 	var session string
-	err := conn.QueryRow("SELECT session, id FROM sessions WHERE sessionid = ? LIMIT 1", sessionId).Scan(&session, &id)
+	err := mem.QueryRow("SELECT session, id FROM sessions WHERE sessionid = ? LIMIT 1", sessionId).Scan(&session, &id)
 	if err != nil {
 		return "", 0, err
 	}
@@ -208,11 +210,22 @@ func migrateDb() {
 		if strings.ToLower(answer) == "y" {
 			_, err = conn.Exec("ALTER TABLE users DROP COLUMN versionTwoLegacyPassword")
 			if err != nil {
-				log.Println("[WARN] Unknown while migrating database (1/2):", err)
+				log.Println("[WARN] Unknown while migrating database (1/3):", err)
 				log.Println("[INFO] This is likely because your database is already migrated. This is not a problem, and Burgernotes does not need this removed - it is just for cleanup")
 				return
 			}
 			_, err = conn.Exec("CREATE TABLE oauth (id INTEGER NOT NULL, oauthProvider TEXT NOT NULL, encryptedPasswd TEXT NOT NULL)")
+			if err != nil {
+				log.Println("[WARN] Unknown while migrating database (2/3):", err)
+				log.Println("[INFO] This is likely because your database is already migrated. This is not a problem, but if it is not, it may cause issues with OAuth2")
+				return
+			}
+			_, err = conn.Exec("DROP TABLE sessions")
+			if err != nil {
+				log.Println("[WARN] Unknown while migrating database (3/3):", err)
+				log.Println("[INFO] This is likely because your database is already migrated. This is not a problem, and Burgernotes does not need this removed - it is just for cleanup")
+				return
+			}
 		} else if answer == ":3" {
 			log.Println("[:3] :3")
 		} else {
@@ -269,9 +282,29 @@ func main() {
 	defer func(conn *sql.DB) {
 		err := conn.Close()
 		if err != nil {
-			log.Println("[ERROR] Unknown in main() defer:", err)
+			log.Println("[ERROR] Unknown in main() conn defer:", err)
 		}
 	}(conn)
+
+	mem, err = sql.Open("sqlite3", ":memory: cache=shared")
+	if err != nil {
+		log.Fatalln("[FATAL] Cannot open session database:", err)
+	}
+	defer func(mem *sql.DB) {
+		err := mem.Close()
+		if err != nil {
+			log.Println("[ERROR] Unknown in main() mem defer:", err)
+		}
+	}(mem)
+
+	_, err = mem.Exec("CREATE TABLE sessions (sessionid INTEGER PRIMARY KEY AUTOINCREMENT, session TEXT NOT NULL, id INTEGER NOT NULL, device TEXT NOT NULL DEFAULT '?')")
+	if err != nil {
+		if err.Error() == "table sessions already exists" {
+			log.Println("[INFO] Session table already exists")
+		} else {
+			log.Fatalln("[FATAL] Cannot create session table:", err)
+		}
+	}
 
 	if len(os.Args) > 1 {
 		if os.Args[1] == "init_db" {
@@ -327,6 +360,18 @@ func main() {
 			c.JSON(400, gin.H{"error": "Invalid JSON"})
 			return
 		}
+		stamp, ok := data["stamp"].(string)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
+
+		pow := hashcash.New(20, 16, "I love burgernotes!")
+		ok = pow.Check(stamp)
+		if !ok {
+			c.JSON(400, gin.H{"error": "Invalid hashcash stamp"})
+			return
+		}
 
 		if username == "" || password == "" || len(username) > 20 || !regexp.MustCompile("^[a-zA-Z0-9]+$").MatchString(username) {
 			c.JSON(422, gin.H{"error": "Invalid username or password"})
@@ -379,7 +424,7 @@ func main() {
 			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SIGNUP-SESSIONSALT"})
 			return
 		}
-		_, err = conn.Exec("INSERT INTO sessions (session, id, device) VALUES (?, ?, ?)", token, userid, c.Request.Header.Get("User-Agent"))
+		_, err = mem.Exec("INSERT INTO sessions (session, id, device) VALUES (?, ?, ?)", token, userid, c.Request.Header.Get("User-Agent"))
 		if err != nil {
 			log.Println("[ERROR] Unknown in /api/signup session Exec():", err)
 			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SIGNUP-SESSIONINSERT"})
@@ -448,7 +493,7 @@ func main() {
 			return
 		}
 
-		_, err = conn.Exec("INSERT INTO sessions (session, id, device) VALUES (?, ?, ?)", token, userid, c.Request.Header.Get("User-Agent"))
+		_, err = mem.Exec("INSERT INTO sessions (session, id, device) VALUES (?, ?, ?)", token, userid, c.Request.Header.Get("User-Agent"))
 		if err != nil {
 			log.Println("[ERROR] Unknown in /api/login session Exec():", err)
 			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LOGIN-SESSIONINSERT"})
@@ -1121,7 +1166,7 @@ func main() {
 			return
 		}
 
-		_, err = conn.Exec("DELETE FROM sessions WHERE id = ?", userid)
+		_, err = mem.Exec("DELETE FROM sessions WHERE id = ?", userid)
 		if err != nil {
 			log.Println("[ERROR] Unknown in /api/deleteaccount session Exec():", err)
 			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-DELETEACCOUNT-SESSIONDELETE"})
@@ -1151,7 +1196,7 @@ func main() {
 			return
 		}
 
-		rows, err := conn.Query("SELECT sessionid, session, device FROM sessions WHERE id = ? ORDER BY id DESC", userid)
+		rows, err := mem.Query("SELECT sessionid, session, device FROM sessions WHERE id = ? ORDER BY id DESC", userid)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				c.JSON(200, []map[string]interface{}{})
@@ -1236,7 +1281,7 @@ func main() {
 				c.JSON(403, gin.H{"error": "Session does not belong to user"})
 				return
 			} else {
-				_, err := conn.Exec("DELETE FROM sessions WHERE sessionid = ?", sessionId)
+				_, err := mem.Exec("DELETE FROM sessions WHERE sessionid = ?", sessionId)
 				if err != nil {
 					log.Println("[ERROR] Unknown in /api/sessions/remove Exec():", err)
 					c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SESSIONS-REMOVE-DBDELETE"})

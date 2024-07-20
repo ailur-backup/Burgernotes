@@ -3,6 +3,7 @@ module hectabit.org/burgernotes
 go 1.22
 
 require (
+	github.com/catalinc/hashcash v1.0.0
 	github.com/gin-contrib/sessions v1.0.1
 	github.com/gin-gonic/gin v1.10.0
 	github.com/mattn/go-sqlite3 v1.14.22
