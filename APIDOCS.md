@@ -98,13 +98,13 @@ POST - /api/listnotes - list notes, provide "secretKey"
 note titles will have to be decrypted.
 
 POST - /api/newnote - create a note, provide "secretKey" and "noteName"
-"noteName" should be encrypted.
+"noteName" should be encrypted using AES-256 GCM with the DONOTSHARE-password as the key and a random 16-byte IV.
 
 POST - /api/readnote - read notes, provide "secretKey" and "noteId"
 note content will have to be decrypted.
 
 POST - /api/editnote - edit notes, provide "secretKey", "noteId", "title", and "content"
-"content" should be encrypted.
+"content" should be encrypted using AES-256 GCM with the DONOTSHARE-password as the key and a random 16-byte IV.
 "title" is the first line of the note content, and should be encrypted.
 
 POST - /api/removenote - remove notes, provide "secretKey" and "noteId"
@@ -124,7 +124,7 @@ POST - /api/exportnotes - export notes, provide "secretKey"
 note content and title will have to be decrypted
 
 POST - /api/importnotes - import notes, provide "secretKey" and "notes"
-note content should be encrypted and follow the /api/exportnotes format, in a marshalled json string
+note content and title should be encrypted using AES-256 GCM with the DONOTSHARE-password as the key and a random 16-byte IV and follow the /api/exportnotes format, in a marshalled json string
 
 POST - /api/sessions/list - show all sessions, provide "secretKey"
 
