@@ -6,8 +6,7 @@ CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     created TEXT NOT NULL,
     username TEXT NOT NULL,
-    password TEXT NOT NULL,
-    versionTwoLegacyPassword TEXT NOT NULL DEFAULT 'nil',
+    password TEXT NOT NULL
 );
 
 CREATE TABLE notes (
@@ -25,3 +24,10 @@ CREATE TABLE sessions (
     id INTEGER NOT NULL,
     device TEXT NOT NULL DEFAULT '?'
 );
+
+CREATE TABLE oauth (
+    id INTEGER NOT NULL,
+    oauthProvider TEXT NOT NULL,
+    encryptedPasswd TEXT NOT NULL,
+    UNIQUE (id, oauthProvider)
+)
