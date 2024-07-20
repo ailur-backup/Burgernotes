@@ -212,25 +212,21 @@ func migrateDb() {
 			if err != nil {
 				log.Println("[WARN] Unknown while migrating database (1/4):", err)
 				log.Println("[INFO] This is likely because your database is already migrated. This is not a problem, and Burgernotes does not need this removed - it is just for cleanup")
-				return
 			}
 			_, err = conn.Exec("CREATE TABLE oauth (id INTEGER NOT NULL, oauthProvider TEXT NOT NULL, encryptedPasswd TEXT NOT NULL)")
 			if err != nil {
 				log.Println("[WARN] Unknown while migrating database (2/4):", err)
 				log.Println("[INFO] This is likely because your database is already migrated. This is not a problem, but if it is not, it may cause issues with OAuth2")
-				return
 			}
 			_, err = conn.Exec("DROP TABLE sessions")
 			if err != nil {
 				log.Println("[WARN] Unknown while migrating database (3/4):", err)
 				log.Println("[INFO] This is likely because your database is already migrated. This is not a problem, and Burgernotes does not need this removed - it is just for cleanup")
-				return
 			}
 			_, err = conn.Exec("ALTER TABLE users ADD COLUMN migrated INTEGER NOT NULL DEFAULT 0")
 			if err != nil {
 				log.Println("[WARN] Unknown while migrating database (4/4):", err)
 				log.Println("[INFO] This is likely because your database is already migrated. This is not a problem, but if it is not, it may cause issues with migrating to Burgernotes 2.0")
-				return
 			}
 		} else if answer == ":3" {
 			log.Println("[:3] :3")
