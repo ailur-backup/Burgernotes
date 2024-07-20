@@ -210,20 +210,26 @@ func migrateDb() {
 		if strings.ToLower(answer) == "y" {
 			_, err = conn.Exec("ALTER TABLE users DROP COLUMN versionTwoLegacyPassword")
 			if err != nil {
-				log.Println("[WARN] Unknown while migrating database (1/3):", err)
+				log.Println("[WARN] Unknown while migrating database (1/4):", err)
 				log.Println("[INFO] This is likely because your database is already migrated. This is not a problem, and Burgernotes does not need this removed - it is just for cleanup")
 				return
 			}
 			_, err = conn.Exec("CREATE TABLE oauth (id INTEGER NOT NULL, oauthProvider TEXT NOT NULL, encryptedPasswd TEXT NOT NULL)")
 			if err != nil {
-				log.Println("[WARN] Unknown while migrating database (2/3):", err)
+				log.Println("[WARN] Unknown while migrating database (2/4):", err)
 				log.Println("[INFO] This is likely because your database is already migrated. This is not a problem, but if it is not, it may cause issues with OAuth2")
 				return
 			}
 			_, err = conn.Exec("DROP TABLE sessions")
 			if err != nil {
-				log.Println("[WARN] Unknown while migrating database (3/3):", err)
+				log.Println("[WARN] Unknown while migrating database (3/4):", err)
 				log.Println("[INFO] This is likely because your database is already migrated. This is not a problem, and Burgernotes does not need this removed - it is just for cleanup")
+				return
+			}
+			_, err = conn.Exec("ALTER TABLE users ADD COLUMN migrated INTEGER NOT NULL DEFAULT 0")
+			if err != nil {
+				log.Println("[WARN] Unknown while migrating database (4/4):", err)
+				log.Println("[INFO] This is likely because your database is already migrated. This is not a problem, but if it is not, it may cause issues with migrating to Burgernotes 2.0")
 				return
 			}
 		} else if answer == ":3" {
@@ -402,7 +408,7 @@ func main() {
 			return
 		}
 
-		_, err = conn.Exec("INSERT INTO users (username, password, created) VALUES (?, ?, ?)", username, hashedPasswd, strconv.FormatInt(time.Now().Unix(), 10))
+		_, err = conn.Exec("INSERT INTO users (username, password, created, migrated) VALUES (?, ?, ?, 1)", username, hashedPasswd, strconv.FormatInt(time.Now().Unix(), 10))
 		if err != nil {
 			log.Println("[ERROR] Unknown in /api/signup Exec():", err)
 			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SIGNUP-DBINSERT"})
@@ -463,6 +469,18 @@ func main() {
 			return
 		}
 
+		var migrated int
+		err = conn.QueryRow("SELECT migrated FROM users WHERE id = ?", userid).Scan(&migrated)
+		if err != nil {
+			log.Println("[ERROR] Unknown in /api/login migrated QueryRow():", err)
+			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LOGIN-MIGRATED"})
+			return
+		}
+
+		if migrated == 0 {
+			c.JSON(401, gin.H{"error": "User has not migrated", "migrated": false})
+		}
+
 		_, _, hashedPasswd, err := getUser(userid)
 		if err != nil {
 			log.Println("[ERROR] Unknown in /api/login getUser():", err)
@@ -482,7 +500,7 @@ func main() {
 			}
 		}
 		if !correctPassword {
-			c.JSON(401, gin.H{"error": "Incorrect password"})
+			c.JSON(401, gin.H{"error": "Incorrect password", "migrated": true})
 			return
 		}
 

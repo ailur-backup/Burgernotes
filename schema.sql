@@ -6,7 +6,8 @@ CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     created TEXT NOT NULL,
     username TEXT NOT NULL,
-    password TEXT NOT NULL
+    password TEXT NOT NULL,
+    migrated INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE notes (
