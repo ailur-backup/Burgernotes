@@ -288,16 +288,10 @@ func main() {
 		}
 	}(conn)
 
-	mem, err = sql.Open("sqlite3", ":memory: cache=shared")
+	mem, err = sql.Open("sqlite3", ":memory:?cache=shared&mode=memory")
 	if err != nil {
 		log.Fatalln("[FATAL] Cannot open session database:", err)
 	}
-	defer func(mem *sql.DB) {
-		err := mem.Close()
-		if err != nil {
-			log.Println("[ERROR] Unknown in main() mem defer:", err)
-		}
-	}(mem)
 
 	_, err = mem.Exec("CREATE TABLE sessions (sessionid INTEGER PRIMARY KEY AUTOINCREMENT, session TEXT NOT NULL, id INTEGER NOT NULL, device TEXT NOT NULL DEFAULT '?')")
 	if err != nil {
