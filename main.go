@@ -1440,9 +1440,16 @@ func main() {
 	go func() {
 		for {
 			time.Sleep(time.Minute)
-			_, err := conn.Exec("DELETE FROM spent WHERE expires < ?", time.Now().Unix())
+			affected, err := mem.Exec("DELETE FROM spent WHERE expires < ?", time.Now().Unix())
 			if err != nil {
 				log.Println("[ERROR] Unknown in spent cleanup Exec():", err)
+			} else {
+				affectedRows, err := affected.RowsAffected()
+				if err != nil {
+					log.Println("[ERROR] Unknown in spent cleanup RowsAffected():", err)
+				} else {
+					log.Println("[INFO] Spent cleanup complete, deleted "+strconv.FormatInt(affectedRows, 10)+" rows at", time.Now().Unix())
+				}
 			}
 		}
 	}()
