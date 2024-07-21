@@ -308,6 +308,16 @@ func main() {
 		}
 	}
 
+	_, err = mem.Exec("CREATE TABLE spent (hashcash TEXT NOT NULL, expires INTEGER NOT NULL)")
+	if err != nil {
+		if err.Error() == "table spent already exists" {
+			log.Println("[INFO] Spent table already exists")
+		} else {
+			log.Fatalln("[FATAL] Cannot create spent table:", err)
+		}
+
+	}
+
 	if len(os.Args) > 1 {
 		if os.Args[1] == "init_db" {
 			initDb()
@@ -365,6 +375,31 @@ func main() {
 		stamp, ok := data["stamp"].(string)
 		if !ok {
 			c.JSON(400, gin.H{"error": "Invalid JSON"})
+			return
+		}
+
+		var spentStamp string
+		err = mem.QueryRow("SELECT hashcash FROM spent WHERE hashcash = ?", stamp).Scan(&spentStamp)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				_, err = mem.Exec("INSERT INTO spent (hashcash, expires) VALUES (?, ?)", stamp, time.Now().Unix()+86400)
+				if err != nil {
+					log.Println("[ERROR] Unknown in /api/signup spent Exec():", err)
+					c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SIGNUP-SPENTINSERT"})
+					return
+				}
+			} else {
+				log.Println("[ERROR] Unknown in /api/signup spent QueryRow():", err)
+				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SIGNUP-SPENTSELECT"})
+				return
+			}
+		} else {
+			c.JSON(409, gin.H{"error": "Stamp already spent"})
+			return
+		}
+
+		if strings.Split(stamp, ":")[3] != "signup" || strings.Split(stamp, ":")[4] != "I love burgernotes!" {
+			c.JSON(400, gin.H{"error": "Invalid hashcash stamp"})
 			return
 		}
 
@@ -495,8 +530,7 @@ func main() {
 				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LOGIN-VERIFYHASH"})
 				return
 			}
-		}
-		if !correctPassword {
+		} else if !correctPassword {
 			if migrated == 0 {
 				c.JSON(401, gin.H{"error": "User has not migrated", "migrated": false})
 				return
@@ -529,7 +563,11 @@ func main() {
 			return
 		}
 
-		c.JSON(200, gin.H{"key": token})
+		if migrated != 1 {
+			c.JSON(200, gin.H{"key": token, "migrated": false})
+		} else {
+			c.JSON(200, gin.H{"key": token, "migrated": true})
+		}
 	})
 
 	router.POST("/api/oauth/get", func(c *gin.Context) {
@@ -1398,6 +1436,16 @@ func main() {
 			}
 		}
 	})
+
+	go func() {
+		for {
+			time.Sleep(time.Minute)
+			_, err := conn.Exec("DELETE FROM spent WHERE expires < ?", time.Now().Unix())
+			if err != nil {
+				log.Println("[ERROR] Unknown in spent cleanup Exec():", err)
+			}
+		}
+	}()
 
 	log.Println("[INFO] Server started at", time.Now().Unix())
 	log.Println("[INFO] Welcome to Burgernotes! Today we are running on IP " + host + " on port " + strconv.Itoa(port) + ".")
