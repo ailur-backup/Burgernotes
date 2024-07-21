@@ -473,10 +473,6 @@ func main() {
 			return
 		}
 
-		if migrated == 0 {
-			c.JSON(401, gin.H{"error": "User has not migrated", "migrated": false})
-		}
-
 		_, _, hashedPasswd, err := getUser(userid)
 		if err != nil {
 			log.Println("[ERROR] Unknown in /api/login getUser():", err)
@@ -496,8 +492,13 @@ func main() {
 			}
 		}
 		if !correctPassword {
-			c.JSON(401, gin.H{"error": "Incorrect password", "migrated": true})
-			return
+			if migrated == 0 {
+				c.JSON(401, gin.H{"error": "User has not migrated", "migrated": false})
+				return
+			} else {
+				c.JSON(401, gin.H{"error": "Incorrect password", "migrated": true})
+				return
+			}
 		}
 
 		token, err := randomChars(512)
