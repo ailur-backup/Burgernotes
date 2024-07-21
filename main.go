@@ -238,7 +238,7 @@ func migrateDb() {
 
 func main() {
 	if _, err := os.Stat("config.ini"); err == nil {
-		log.Println("[INFO] Config loaded at", time.Now().Unix())
+		log.Println("[INFO] Config loaded")
 	} else if os.IsNotExist(err) {
 		log.Fatalln("[FATAL] config.ini does not exist")
 	} else {
@@ -446,10 +446,10 @@ func main() {
 			return
 		}
 
-		log.Println("[INFO] Added new user at", time.Now().Unix())
+		log.Println("[INFO] Added new user")
 		userid, taken, err := checkUsernameTaken(username)
 		if !taken {
-			log.Println("[CRITICAL] Something is very wrong! A user was created but could not be found in the database at", time.Now().Unix())
+			log.Println("[CRITICAL] Something is very wrong! A user was created but could not be found in the database")
 			log.Println("[INFO] This should not be possible. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes with the error code: UNKNOWN-API-SIGNUP-POSTTAKEN")
 			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SIGNUP-POSTTAKEN"})
 			return
@@ -1448,16 +1448,16 @@ func main() {
 				if err != nil {
 					log.Println("[ERROR] Unknown in spent cleanup RowsAffected():", err)
 				} else {
-					log.Println("[INFO] Spent cleanup complete, deleted "+strconv.FormatInt(affectedRows, 10)+" rows at", time.Now().Unix())
+					log.Println("[INFO] Spent cleanup complete, deleted " + strconv.FormatInt(affectedRows, 10) + " rows")
 				}
 			}
 		}
 	}()
 
-	log.Println("[INFO] Server started at", time.Now().Unix())
+	log.Println("[INFO] Server started")
 	log.Println("[INFO] Welcome to Burgernotes! Today we are running on IP " + host + " on port " + strconv.Itoa(port) + ".")
 	err = router.Run(host + ":" + strconv.Itoa(port))
 	if err != nil {
-		log.Fatalln("[FATAL] Server failed to begin operations at", time.Now().Unix(), err)
+		log.Fatalln("[FATAL] Server failed to begin operations")
 	}
 }
