@@ -403,7 +403,7 @@ func main() {
 			return
 		}
 
-		pow := hashcash.New(20, 16, "I love burgernotes!")
+		pow := hashcash.New(20, 16, "I love Burgernotes!")
 		ok = pow.Check(stamp)
 		if !ok {
 			c.JSON(400, gin.H{"error": "Invalid hashcash stamp"})
