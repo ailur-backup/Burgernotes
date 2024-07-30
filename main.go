@@ -398,7 +398,7 @@ func main() {
 			return
 		}
 
-		if strings.Split(stamp, ":")[3] != "signup" || strings.Split(stamp, ":")[4] != "I love burgernotes!" {
+		if strings.Split(stamp, ":")[3] != "signup" || strings.Split(stamp, ":")[4] != "I love Burgernotes!" {
 			c.JSON(400, gin.H{"error": "Invalid hashcash stamp"})
 			return
 		}
