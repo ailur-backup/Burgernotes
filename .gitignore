@@ -1,4 +1,4 @@
-database.db
-config.ini
-config.ini.example
+# IntelliJ IDEA
 .idea
+# Protocol Buffers
+git.ailur.dev

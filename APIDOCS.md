@@ -1,135 +1,313 @@
-# 🍔 Burgernotes API docs
-Use the Burgernotes API to automate tasks, build your own client, and more!
+# API documentation
 
-Headers should be: "Content-type: application/json; charset=UTF-8" for all POSTs
+The Burgernotes API is a RESTful API that allows you to interact with the Burgernotes service. The API is designed to be simple and easy to use.
+It uses Protocol Buffers for serialization and deserialization, and POST requests for all operations.
 
-## 🔑 Authentication
+## Protobuf types
+These are some basic Protobuf types that are used in the API.
+All protocol buffers are using proto3 syntax.
+```protobuf
+syntax = "proto3";
 
-POST - /api/signup - provide "username" and "password".
+// Token is a string that represents an OAuth2 JWT token.
+message Token {
+  string token = 1;
+}
 
-POST - /api/login - provide "username" and "password"
+// NoteID is a UUID that represents a note.
+message NoteID {
+  bytes noteId = 1;
+}
 
-To prevent the server from knowing the encryption key, the password you provide in the request must be hashed with Argon2ID as per the following parameters:
- 
-- salt: UTF-8 Representation of "I munch Burgers!!" (should be 16 bytes),
-- parallelism: 1
-- iterations: 32
-- memorySize: 19264 bytes
-- hashLength: 32
-- outputType: hexadecimal
+// NoteID and Token together represent a request involving a note.
+message NoteRequest {
+  NoteID noteId = 1;
+  Token token = 2;
+}
 
-Password should be at least 8 characters, username must be under 20 characters and alphanumeric.
+// AESData represents AES-encrypted data.
+message AESData {
+  bytes data = 2;
+  bytes iv = 3;
+}
 
-If username is taken, error code 422 will return.
+// NoteMetadata represents the metadata of a note.
+message NoteMetadata {
+  NoteID noteId = 1;
+  AESData title = 2;
+}
 
-Assuming everything went correctly, the server will return a secret key.
+// Note represents a note.
+message Note {
+  NoteMetadata metadata = 1;
+  AESData note = 2;
+}
 
-You'll need to store two things in local storage:
-- The secret key you just got, used to fetch notes, save stuff etc.
-- Another password, which is hashed the same way, but with a salt of "I love Burgernotes!" (again, UTF-8 representation, 16 bytes).
+// Invitation represents an invitation to a note.
+message Invitation {
+  string username = 1;
+  AESData key = 2;
+  NoteID noteId = 3;
+}
 
-If you are using the OAuth2 flow (totally optional, I know it's really complex) then you should also store the login password to use later, or put the OAuth2 logic straight after this.
+// User represents a user editing notes.
+message UserLines {
+  string username = 1;
+  bytes uuid = 2;
+  repeated uint64 lines = 3;
+}
 
-## 🌐 OAuth2 + Burgerauth
+// Error represents an error.
+message Error {
+  string error = 1;
+}
 
-For security purposes, traditional OAuth2 is not supported. Instead, we use Burgerauth, a custom OAuth2 implementation that provides a unique-yet-consistent "authentication code" for each user. It is created in a special way as to not involve the server, meaning the security of Burgernotes is not compromised by using OAuth2, which is normally a very server-side process.
-
-### How it works
-First, perform regular client-side OAuth2 authentication using Burgerauth, as detailed in its [own documentation](https://concord.hectabit.org/HectaBit/burgerauth/src/branch/main/APIDOCS.md). Once regular OAuth2 is complete, you will be given an authentication code, which is important for the next step.
-
-You now have one of two options:
-1. If your app is based on the web, you can host a static page provided [here](https://concord.hectabit.org/HectaBit/burgerauth/src/branch/main/keyExchangeRdir.html) on any static service. Redirect to this page with the OAuth2 token stored in localStorage as BURGERAUTH-RDIR-TOKEN. The page will then communicate with a corresponding page on Burgerauth, and transmit the key securely via RSA. You may see the page redirect a couple of times as it communicates the infomation across. All you need to know is that once it is finished, it will redirect back to the page that redirected to it with the key in localStorage as DONOTSHARE-EXCHANGED-KEY.
-2. If your app is not web-based, you can open up a webview to [here](https://auth.hectabit.org/keyexchangeclient). Once it is finished, it will send a postMessage with the body "finished" to the target "*" and output "finished" to the JavaScript console. The key will be in localStorage as DONOTSHARE-EXCHANGED-KEY.
-3. Alternatively, you can host a local webserver and host the aforementioned page on it. It will work the same way as the first option, and once it is finished, it will detect that it was not redirected to and instead will set it as a cookie expiring in 5 minutes and then refresh the page. You should detect for the cookie and use its value, and then kill the webserver. This method is not recommended because of its complexity and overhead.
-
-Once this is finished, you should check if there is an existing OAuth2 entry on the server like this:
-
-POST - /api/oauth/get - provide "username" and "oauthProvider"
-oauthProvider is the name of the OAuth2 provider, such as "burgerauth" or "google" (google is used as an example, they do not use the burgerauth extensions and are therefore incompatible).
-It does not have to be the actual name, but it has to be unique to the provider (per user). The sub given by OpenID Connect is a good choice.
-
-### 404 is returned
-No entry has been found, and you have to log in the user as normal.
-Once this is done, you should create an entry like this:
-
-POST - /api/oauth/new - provide "secretKey", "oauthProvider" and "encryptedPassword"
-
-To create encryptedPassword, follow these steps:
-
-1. Generate a random 16-byte IV.
-2. Create a JSON structure like this: 
-```json
-{
-    "loginPass": "(the SHA-3 password hash created in the login process)",
-    "cryptoPass": "(the SHA-512 password hash stored in localStorage)"
+// ServerError represents a 500 error, with a hex error code.
+message ServerError {
+  bytes errorCode = 1;
 }
 ```
-3. Convert the JSON to a string and then encrypt it using AES-256 GCM using the exchangeKey as the key and the IV created earlier as the IV.
-4. Create a JSON structure like this:
-```json
-{
-    "iv": "(the IV)",
-    "content": "(the encrypted JSON)"
+## Errors
+In any response, if an error occurs, it will return an `Error` or `ServerError` message.
+### 400 Range
+```protobuf
+message Error {
+  string error = 1;
 }
 ```
-5. Finally, convert the JSON into a string, base64 encode it, and send it off as encryptedPassword.
+The error is formatted to be human-readable, you may display it to the user.
+### HTTP 500
+```protobuf
+message ServerError {
+    bytes errorCode = 1;
+}
+```
+ServerError is a hex byte which represents the error code. You should give a vague error message to the user.
 
-Do not store the exchangeKey after this point, as it is no longer needed.
+## Authentication
+### /api/signup - POST
+#### Request
+```protobuf
+message ApiSignupRequest {
+    bytes publicKey = 1;
+    Token token = 2;
+}
+```
+#### Response
+200 OK
+No response body
 
-### 200 is returned
-An entry exists, and encryptedPassword has been returned using JSON.
-encryptedPassword is the password encrypted using AES-256 GCM, and the IV is included in the JSON, in this format defined above.
+### /api/delete - POST - Show a warning before this action!
+#### Request
+```protobuf
+message Token {
+  string token = 1;
+}
+```
+#### Response
+HTTP 200 OK
+No response body
 
-Use the passwords defined in the JSON structure before the last one to log in normally.
+## Interacting with notes
+### /api/notes/add - POST
+#### Request
+```protobuf
+message Token {
+  string token = 1;
+}
+```
+#### Response
+HTTP 200 OK
+```protobuf
+message NoteID {
+  bytes noteId = 1;
+}
+```
 
-#### Finally, you are done!
+### /api/notes/remove - POST
+#### Request
+```protobuf
+message NoteRequest {
+  NoteID noteId = 1;
+  Token token
+}
+```
+#### Response
+HTTP 200 OK
+No response body
 
-## 🔐 Encryption
+### /api/notes/list - POST
+#### Request
+```protobuf
+message Token {
+  string token = 1;
+}
+```
+#### Response
+HTTP 200 OK
+```protobuf
+message ApiNotesListResponse {
+    repeated NoteMetadata notes = 1;
+}
+```
 
-Note content and title is encrypted using AES 256-bit.
+### /api/notes/get - POST
+#### Request
+```protobuf
+message NoteRequest {
+  NoteID noteId = 1;
+  Token token
+}
+```
+#### Response
+HTTP 200 OK
+```protobuf
+message Note {
+  NoteMetadata metadata = 1;
+  AESData note = 2;
+}
+```
 
-Encryption password is the SHA512 hashed password we talked about earlier.
+### /api/notes/edit - POST
+#### Request
+```protobuf
+message ApiNotesEditRequest {
+    Note note = 1;
+    Token token = 2;
+}
+```
+#### Response
+HTTP 200 OK
+No response body
 
-## 🕹️ Basic stuff
+### /api/notes/purge - POST - Show a warning before this action!
+#### Request
+```protobuf
+message Token {
+  string token = 1;
+}
+```
+#### Response
+HTTP 200 OK
+No response body
 
-POST - /api/userinfo - get user info such as username, provide "secretKey"
+## Shared notes - This is not yet implemented
+### /api/invite/prepare - POST
+#### Request
+```protobuf
+message ApiInvitePrepareRequest {
+    string username = 1;
+    Token token = 2;
+}
+```
+#### Response
+HTTP 200 OK
+```protobuf
+message ApiInvitePrepareResponse {
+    bytes ecdhExchange = 1;
+}
+```
 
-POST - /api/listnotes - list notes, provide "secretKey"
-note titles will have to be decrypted.
+### /api/invite/check - POST
+#### Request
+```protobuf
+message Token {
+    string token = 1;
+}
+```
+#### Response
+HTTP 200 OK
+```protobuf
+message ApiInviteCheckResponse {
+    repeated Invitation invitations = 1;
+}
+```
 
-POST - /api/newnote - create a note, provide "secretKey" and "noteName"
-"noteName" should be encrypted using AES-256 GCM with the DONOTSHARE-password as the key and a random 16-byte IV.
+### /api/invite/link - POST
+#### Request
+```protobuf
+message ApiInviteLinkRequest {
+    NoteRequest noteRequest = 1;
+    int64 timestamp = 2;
+    bool singleUse = 3;
+}
+```
+#### Response
+HTTP 200 OK
+```protobuf
+message ApiInviteLinkResponse {
+    bytes inviteCode = 1;
+}
+```
 
-POST - /api/readnote - read notes, provide "secretKey" and "noteId"
-note content will have to be decrypted.
+### /api/invite/accept - POST
+#### Request
+```protobuf
+message ApiInviteAcceptRequest {
+    bytes inviteCode = 1;
+    Token token = 2;
+}
+```
+#### Response
+HTTP 200 OK
+```protobuf
+message NoteID {
+    bytes noteId = 1;
+}
+```
 
-POST - /api/editnote - edit notes, provide "secretKey", "noteId", "title", and "content"
-"content" should be encrypted using AES-256 GCM with the DONOTSHARE-password as the key and a random 16-byte IV.
-"title" is the first line of the note content, and should be encrypted.
+### /api/invite/leave - POST
+#### Request
+```protobuf
+message NoteRequest {
+    NoteID noteId = 1;
+    Token token
+}
+```
+#### Response
+HTTP 200 OK
+No response body
 
-POST - /api/removenote - remove notes, provide "secretKey" and "noteId"
+### /api/shared - WebSocket
+Every heartbeat interval (500ms):
+#### Request
+```protobuf
+message ApiSharedRequest {
+    repeated uint64 lines = 1;
+    Token token = 2;
+}
+```
+#### Response
+```protobuf
+message ApiSharedResponse {
+    repeated UserLines users = 1;
+}
+```
 
-POST - /api/purgenotes - remove all notes, provide "secretKey"
-### Please display a warning before this action
+### /api/shared/edit - POST
+#### Request
+```protobuf
+message ApiSharedEditRequest {
+    repeated AESData lines = 1;
+    Token token = 2;
+}
+```
+#### Response
+HTTP 200 OK
+No response body
 
-## ⚙️ Account management
-
-POST - /api/changepassword - change account password, provide "secretKey", "newPassword"
-encrypt the same way as /api/login
-
-POST - /api/deleteaccount - delete account, provide "secretKey"
-### Please display a warning before this action
-
-POST - /api/exportnotes - export notes, provide "secretKey"
-note content and title will have to be decrypted
-
-POST - /api/importnotes - import notes, provide "secretKey" and "notes"
-note content and title should be encrypted using AES-256 GCM with the DONOTSHARE-password as the key and a random 16-byte IV and follow the /api/exportnotes format, in a marshalled json string
-
-POST - /api/sessions/list - show all sessions, provide "secretKey"
-
-POST - /api/sessions/remove - remove session, provide "secretKey" and "sessionId"
-
-## ‍💼 Admin controls
-
-POST - /api/listusers - lists all users in JSON, provide "masterKey" (set in config.ini)
+### /api/shared/get - POST
+#### Request
+```protobuf
+message NoteRequest {
+    NoteID noteId = 1;
+    Token token
+}
+```
+#### Response
+```protobuf
+message ApiSharedGetResponse {
+    repeated AESData lines = 1;
+    NoteMetadata metadata = 2;
+}
+```

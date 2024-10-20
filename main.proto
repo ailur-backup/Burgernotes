@@ -1,0 +1,142 @@
+syntax = "proto3";
+package main;
+option go_package = "git.ailur.dev/ailur/burgernotes/protobuf";
+
+// Token is a string that represents an OAuth2 JWT token.
+message Token {
+    string token = 1;
+}
+
+// NoteID is a UUID that represents a note.
+message NoteID {
+    bytes noteId = 1;
+}
+
+// NoteID and Token together represent a request involving a note.
+message NoteRequest {
+    NoteID noteId = 1;
+    Token token = 2;
+}
+
+// AESData represents AES-encrypted data.
+message AESData {
+    bytes data = 2;
+    bytes iv = 3;
+}
+
+// NoteMetadata represents the metadata of a note.
+message NoteMetadata {
+    NoteID noteId = 1;
+    AESData title = 2;
+}
+
+// Note represents a note.
+message Note {
+    NoteMetadata metadata = 1;
+    AESData note = 2;
+}
+
+// /api/notes/list returns an array of notes.
+message ApiNotesListResponse {
+    repeated NoteMetadata notes = 1;
+}
+
+// /api/notes/edit accepts a note and a token.
+message ApiNotesEditRequest {
+    Note note = 1;
+    Token token = 2;
+}
+
+// /api/signup accepts a public key and a token.
+message ApiSignupRequest {
+    bytes publicKey = 1;
+    Token token = 2;
+}
+
+// /api/invite/prepare accepts an username and a token.
+message ApiInvitePrepareRequest {
+    string username = 1;
+    Token token = 2;
+}
+
+// /api/invite/prepare returns a ECDH key.
+message ApiInvitePrepareResponse {
+    bytes ecdhExchange = 1;
+}
+
+// /api/invite/send accepts a ECDH exchange, a AES-encrypted key and a NoteRequest.
+message ApiInviteSendRequest {
+    bytes ecdhExchange = 1;
+    AESData key = 2;
+    NoteRequest noteRequest = 3;
+}
+
+// Invitation represents an invitation to a note.
+message Invitation {
+    string username = 1;
+    AESData key = 2;
+    NoteID noteId = 3;
+}
+
+// /api/invite/check returns an array of invitations.
+message ApiInviteCheckResponse {
+    repeated Invitation invitations = 1;
+}
+
+// /api/invite/link accepts a NoteRequest, UNIX timestamp and a singleUse boolean.
+message ApiInviteLinkRequest {
+    NoteRequest noteRequest = 1;
+    int64 timestamp = 2;
+    bool singleUse = 3;
+}
+
+// /api/invite/link returns an invite code.
+message ApiInviteLinkResponse {
+    bytes inviteCode = 1;
+}
+
+// /api/invite/accept accepts an invite code and a token.
+message ApiInviteAcceptRequest {
+    bytes inviteCode = 1;
+    Token token = 2;
+}
+
+// /api/shared is a WebSocket which accepts an array of line numbers and a token.
+message ApiSharedRequest {
+    repeated uint64 lines = 1;
+    Token token = 2;
+}
+
+// User represents a user editing notes.
+message UserLines {
+    string username = 1;
+    bytes uuid = 2;
+    repeated uint64 lines = 3;
+}
+
+// /api/shared is a WebSocket which returns the array of line numbers for each user working on a note.
+message ApiSharedResponse {
+    repeated UserLines users = 1;
+}
+
+// /api/shared/edit accepts multiple lines, represented as an individual AESData, and a token.
+message ApiSharedEditRequest {
+    repeated AESData lines = 1;
+    Token token = 2;
+}
+
+// /api/shared/get returns the lines of a note.
+message ApiSharedGetResponse {
+    repeated AESData lines = 1;
+    NoteMetadata metadata = 2;
+}
+
+// Error represents an error.
+message Error {
+    string error = 1;
+}
+
+// ServerError represents a 500 error, with a hex error code.
+message ServerError {
+    bytes errorCode = 1;
+}

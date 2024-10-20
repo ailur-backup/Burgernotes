@@ -1,1463 +1,757 @@
 package main
 
 import (
-	"crypto/rand"
-	"database/sql"
-	"encoding/hex"
-	"encoding/json"
+	"bytes"
+	"git.ailur.dev/ailur/burgernotes/git.ailur.dev/ailur/burgernotes/protobuf"
+
 	"errors"
-	"fmt"
-	"github.com/catalinc/hashcash"
-	"log"
+	"io"
 	"os"
-	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
-	"github.com/gin-gonic/gin"
-	"github.com/mattn/go-sqlite3"
-	"github.com/spf13/viper"
-	"golang.org/x/crypto/scrypt"
+	"crypto/ed25519"
+	"encoding/json"
+	"io/fs"
+	"net/http"
+	"net/url"
+
+	library "git.ailur.dev/ailur/fg-library/v2"
+	nucleusLibrary "git.ailur.dev/ailur/fg-nucleus-library"
+	"github.com/go-chi/chi/v5"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"google.golang.org/protobuf/proto"
 )
 
-var (
-	conn       *sql.DB
-	mem        *sql.DB
-	host       string
-	port       int
-	secretKey  string
-	maxStorage int64
-	saltChars  = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-)
-
-func randomChars(length int) (string, error) {
-	if length <= 0 {
-		return "", errors.New("salt length must be at least one")
-	}
-
-	salt := make([]byte, length)
-	randomBytes := make([]byte, length)
-	_, err := rand.Read(randomBytes)
-	if err != nil {
-		return "", err
-	}
-
-	for i := range salt {
-		salt[i] = saltChars[int(randomBytes[i])%len(saltChars)]
-	}
-	return string(salt), nil
+var ServiceInformation = library.Service{
+	Name: "burgernotes",
+	Permissions: library.Permissions{
+		Authenticate:              true,  // This service does require authentication
+		Database:                  true,  // This service does require database access
+		BlobStorage:               true,  // This service does require blob storage access
+		InterServiceCommunication: true,  // This service does require inter-service communication
+		Resources:                 false, // This service is API-only, so it does not require resources
+	},
+	ServiceID: uuid.MustParse("b0bee29e-00c4-4ead-a5d6-3f792ff25174"),
 }
 
-func hash(password, salt string) (string, error) {
-	passwordBytes := []byte(password)
-	saltBytes := []byte(salt)
-
-	derivedKey, err := scrypt.Key(passwordBytes, saltBytes, 32768, 8, 1, 64)
-	if err != nil {
-		return "", err
-	}
-
-	hashString := fmt.Sprintf("scrypt:32768:8:1$%s$%s", salt, hex.EncodeToString(derivedKey))
-	return hashString, nil
-}
-
-func verifyHash(werkzeugHash, password string) (bool, error) {
-	parts := strings.Split(werkzeugHash, "$")
-	if len(parts) != 3 || parts[0] != "scrypt:32768:8:1" {
-		return false, errors.New("invalid hash format")
-	}
-	salt := parts[1]
-
-	computedHash, err := hash(password, salt)
-	if err != nil {
-		return false, err
-	}
-
-	return werkzeugHash == computedHash, nil
-}
-
-func getUser(id int) (string, string, string, error) {
-	var created, username, password string
-	err := conn.QueryRow("SELECT created, username, password FROM users WHERE id = ? LIMIT 1", id).Scan(&created, &username, &password)
-	if err != nil {
-		return "", "", "", err
-	}
-
-	return created, username, password, err
-}
-
-func getNote(id int) (int, string, string, string, string, error) {
-	var creator int
-	var created, edited, content, title string
-	err := conn.QueryRow("SELECT creator, created, edited, content, title FROM notes WHERE id = ? LIMIT 1", id).Scan(&creator, &created, &edited, &content, &title)
-	if err != nil {
-		return 0, "", "", "", "", err
-	}
-
-	return creator, created, edited, content, title, err
-}
-
-func getSpace(id int) (int, error) {
-	var space int
-	err := conn.QueryRow("SELECT COALESCE(SUM(LENGTH(content) + LENGTH(title)), 0) FROM notes WHERE creator = ?", id).Scan(&space)
-	if err != nil {
-		return 0, err
-	}
-	return space, nil
-}
-
-func getNoteCount(id int) (int, error) {
-	var count int
-	err := conn.QueryRow("SELECT COUNT(*) FROM notes WHERE creator = ?", id).Scan(&count)
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
-}
-
-func checkUsernameTaken(username string) (int, bool, error) {
-	var id int
-	err := conn.QueryRow("SELECT id FROM users WHERE lower(username) = ? LIMIT 1", strings.ToLower(username)).Scan(&id)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return 0, false, nil
-		} else {
-			return 0, true, err
-		}
-	} else {
-		return id, true, nil
-	}
-}
-
-func getSession(session string) (int, int, error) {
-	var id int
-	var sessionId int
-	err := mem.QueryRow("SELECT sessionid, id FROM sessions WHERE session = ? LIMIT 1", session).Scan(&sessionId, &id)
-	if err != nil {
-		return 0, 0, err
-	}
-	return sessionId, id, err
-}
-
-func getSessionFromId(sessionId int) (string, int, error) {
-	var id int
-	var session string
-	err := mem.QueryRow("SELECT session, id FROM sessions WHERE sessionid = ? LIMIT 1", sessionId).Scan(&session, &id)
-	if err != nil {
-		return "", 0, err
-	}
-	return session, id, err
-}
-
-func generateDB() error {
-	schemaBytes, err := os.ReadFile("schema.sql")
+func unmarshalProtobuf(r *http.Request, protobuf proto.Message) error {
+	var protobufData []byte
+	_, err := r.Body.Read(protobufData)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Exec(string(schemaBytes))
+
+	err = proto.Unmarshal(protobufData, protobuf)
 	if err != nil {
 		return err
 	}
-	log.Println("[INFO] Generated database")
+
 	return nil
 }
 
-func initDb() {
-	_, err := os.Stat("database.db")
-	if os.IsNotExist(err) {
-		err = generateDB()
-		if err != nil {
-			log.Fatalln("[FATAL] Unknown while generating database:", err)
-		}
-	} else {
-		log.Print("[PROMPT] Proceeding will overwrite the database. Proceed? (y/n): ")
-		var answer string
-		_, err := fmt.Scanln(&answer)
-		if err != nil {
-			log.Fatalln("[FATAL] Unknown while scanning input:", err)
-		}
-		if strings.ToLower(answer) == "y" {
-			err := generateDB()
-			if err != nil {
-				log.Fatalln("[FATAL] Unknown while generating database:", err)
-				return
-			}
-		} else if answer == ":3" {
-			log.Println("[:3] :3")
-		} else {
-			log.Println("[INFO] Stopped")
-		}
+func logFunc(message string, messageType uint64, information library.ServiceInitializationInformation) {
+	// Log the message to the logger service
+	information.Outbox <- library.InterServiceMessage{
+		ServiceID:    ServiceInformation.ServiceID,
+		ForServiceID: uuid.MustParse("00000000-0000-0000-0000-000000000002"), // Logger service
+		MessageType:  messageType,
+		SentAt:       time.Now(),
+		Message:      message,
 	}
 }
 
-func migrateDb() {
-	_, err := os.Stat("database.db")
-	if os.IsNotExist(err) {
-		err = generateDB()
-		if err != nil {
-			log.Fatalln("[FATAL] Unknown while generating database:", err)
-		}
-	} else {
-		log.Println("[PROMPT] Proceeding will render the database unusable for older versions of Burgernotes. Proceed? (y/n): ")
-		var answer string
-		_, err := fmt.Scanln(&answer)
-		if err != nil {
-			log.Fatalln("[FATAL] Unknown while scanning input:", err)
-		}
-		if strings.ToLower(answer) == "y" {
-			_, err = conn.Exec("ALTER TABLE users DROP COLUMN versionTwoLegacyPassword")
-			if err != nil {
-				log.Println("[WARN] Unknown while migrating database (1/4):", err)
-				log.Println("[INFO] This is likely because your database is already migrated. This is not a problem, and Burgernotes does not need this removed - it is just for cleanup")
-			}
-			_, err = conn.Exec("CREATE TABLE oauth (id INTEGER NOT NULL, oauthProvider TEXT NOT NULL, encryptedPasswd TEXT NOT NULL)")
-			if err != nil {
-				log.Println("[WARN] Unknown while migrating database (2/4):", err)
-				log.Println("[INFO] This is likely because your database is already migrated. This is not a problem, but if it is not, it may cause issues with OAuth2")
-			}
-			_, err = conn.Exec("DROP TABLE sessions")
-			if err != nil {
-				log.Println("[WARN] Unknown while migrating database (3/4):", err)
-				log.Println("[INFO] This is likely because your database is already migrated. This is not a problem, and Burgernotes does not need this removed - it is just for cleanup")
-			}
-			_, err = conn.Exec("ALTER TABLE users ADD COLUMN migrated INTEGER NOT NULL DEFAULT 0")
-			if err != nil {
-				log.Println("[WARN] Unknown while migrating database (4/4):", err)
-				log.Println("[INFO] This is likely because your database is already migrated. This is not a problem, but if it is not, it may cause issues with migrating to Burgernotes 2.0")
-			}
-		} else if answer == ":3" {
-			log.Println("[:3] :3")
-		} else {
-			log.Println("[INFO] Stopped")
-		}
-	}
-}
-
-func main() {
-	if _, err := os.Stat("config.ini"); err == nil {
-		log.Println("[INFO] Config loaded")
-	} else if os.IsNotExist(err) {
-		log.Fatalln("[FATAL] config.ini does not exist")
-	} else {
-		log.Fatalln("[FATAL] File is in quantum uncertainty:", err)
+func askBlobService(body any, information library.ServiceInitializationInformation, context uint64) (library.InterServiceMessage, error) {
+	// Ask the blob storage service for the thing
+	information.Outbox <- library.InterServiceMessage{
+		ServiceID:    ServiceInformation.ServiceID,
+		ForServiceID: uuid.MustParse("00000000-0000-0000-0000-000000000003"), // Blob storage service
+		MessageType:  context,
+		SentAt:       time.Now(),
+		Message:      body,
 	}
 
-	viper.SetConfigName("config")
-	viper.AddConfigPath("./")
-	viper.AutomaticEnv()
-
-	err := viper.ReadInConfig()
-	if err != nil {
-		log.Fatalln("[FATAL] Error in config file:", err)
-	}
-
-	host = viper.GetString("config.HOST")
-	port = viper.GetInt("config.PORT")
-	secretKey = viper.GetString("config.SECRET_KEY")
-	maxStorage = viper.GetInt64("config.MAX_STORAGE")
-
-	if host == "" {
-		log.Fatalln("[FATAL] HOST is not set")
-	}
-
-	if port == 0 {
-		log.Fatalln("[FATAL] PORT is not set")
-	}
-
-	if secretKey == "" {
-		log.Fatalln("[FATAL] SECRET_KEY is not set")
-	} else if secretKey == "supersecretkey" {
-		log.Println("[WARN] SECRET_KEY is set to a default value. Please set it to another value.")
-	}
-
-	if maxStorage == 0 {
-		log.Fatalln("[FATAL] MAX_STORAGE is not set")
-	}
-
-	conn, err = sql.Open("sqlite3", "database.db")
-	if err != nil {
-		log.Fatalln("[FATAL] Cannot open database:", err)
-	}
-	defer func(conn *sql.DB) {
-		err := conn.Close()
-		if err != nil {
-			log.Println("[ERROR] Unknown in main() conn defer:", err)
-		}
-	}(conn)
-
-	mem, err = sql.Open("sqlite3", "file:bgnsessiondb?cache=shared&mode=memory")
-	if err != nil {
-		log.Fatalln("[FATAL] Cannot open session database:", err)
-	}
-	defer func(mem *sql.DB) {
-		err := mem.Close()
-		if err != nil {
-			log.Println("[ERROR] Unknown in main() mem defer:", err)
-		}
-	}(mem)
-
-	_, err = mem.Exec("CREATE TABLE sessions (sessionid INTEGER PRIMARY KEY AUTOINCREMENT, session TEXT NOT NULL, id INTEGER NOT NULL, device TEXT NOT NULL DEFAULT '?')")
-	if err != nil {
-		if err.Error() == "table sessions already exists" {
-			log.Println("[INFO] Session table already exists")
-		} else {
-			log.Fatalln("[FATAL] Cannot create session table:", err)
-		}
-	}
-
-	_, err = mem.Exec("CREATE TABLE spent (hashcash TEXT NOT NULL, expires INTEGER NOT NULL)")
-	if err != nil {
-		if err.Error() == "table spent already exists" {
-			log.Println("[INFO] Spent table already exists")
-		} else {
-			log.Fatalln("[FATAL] Cannot create spent table:", err)
-		}
-
-	}
-
-	if len(os.Args) > 1 {
-		if os.Args[1] == "init_db" {
-			initDb()
-			os.Exit(0)
-		} else if os.Args[1] == "migrate_db" {
-			migrateDb()
-			os.Exit(0)
-		}
-	}
-
-	gin.SetMode(gin.ReleaseMode)
-	router := gin.New()
-	store := cookie.NewStore([]byte(secretKey))
-	router.Use(sessions.Sessions("session", store))
-
-	router.Use(func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "*, Authorization")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "*")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(200)
-			return
-		}
-
-		c.Next()
-	})
-
-	router.GET("/api/version", func(c *gin.Context) {
-		c.String(200, "Burgernotes Version 2.0 Beta 2")
-	})
-
-	router.GET("/api/versionjson", func(c *gin.Context) {
-		c.JSON(200, gin.H{"name": "Burgernotes", "versiontxt": "Version 2.0 Beta 2", "versionsem": "2.0.0b2", "versionnum": "200"})
-	})
-
-	router.POST("/api/signup", func(c *gin.Context) {
-		var data map[string]interface{}
-		err := c.ShouldBindJSON(&data)
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		username, ok := data["username"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		password, ok := data["password"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		stamp, ok := data["stamp"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		var spentStamp string
-		err = mem.QueryRow("SELECT hashcash FROM spent WHERE hashcash = ?", stamp).Scan(&spentStamp)
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				_, err = mem.Exec("INSERT INTO spent (hashcash, expires) VALUES (?, ?)", stamp, time.Now().Unix()+86400)
-				if err != nil {
-					log.Println("[ERROR] Unknown in /api/signup spent Exec():", err)
-					c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SIGNUP-SPENTINSERT"})
-					return
-				}
-			} else {
-				log.Println("[ERROR] Unknown in /api/signup spent QueryRow():", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SIGNUP-SPENTSELECT"})
-				return
-			}
-		} else {
-			c.JSON(409, gin.H{"error": "Stamp already spent"})
-			return
-		}
-
-		if strings.Split(stamp, ":")[3] != "signup" || strings.Split(stamp, ":")[4] != "I love Burgernotes!" {
-			c.JSON(400, gin.H{"error": "Invalid hashcash stamp"})
-			return
-		}
-
-		pow := hashcash.New(20, 16, "I love Burgernotes!")
-		ok = pow.Check(stamp)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid hashcash stamp"})
-			return
-		}
-
-		if username == "" || password == "" || len(username) > 20 || !regexp.MustCompile("^[a-zA-Z0-9]+$").MatchString(username) {
-			c.JSON(422, gin.H{"error": "Invalid username or password"})
-			return
-		}
-
-		_, taken, err := checkUsernameTaken(username)
-		if err != nil {
-			log.Println("[ERROR] Unknown in /api/signup checkUsernameTaken():", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SIGNUP-USERTAKEN"})
-			return
-		}
-		if taken {
-			c.JSON(409, gin.H{"error": "Username is taken"})
-			return
-		}
-
-		salt, err := randomChars(16)
-		if err != nil {
-			log.Println("[ERROR] Unknown in /api/signup randomChars():", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SIGNUP-SALT"})
-			return
-		}
-		hashedPasswd, err := hash(password, salt)
-		if err != nil {
-			log.Println("[ERROR] Unknown in /api/signup hash():", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SIGNUP-HASH"})
-			return
-		}
-
-		_, err = conn.Exec("INSERT INTO users (username, password, created, migrated) VALUES (?, ?, ?, 1)", username, hashedPasswd, strconv.FormatInt(time.Now().Unix(), 10))
-		if err != nil {
-			log.Println("[ERROR] Unknown in /api/signup Exec():", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SIGNUP-DBINSERT"})
-			return
-		}
-
-		log.Println("[INFO] Added new user")
-		userid, taken, err := checkUsernameTaken(username)
-		if !taken {
-			log.Println("[CRITICAL] Something is very wrong! A user was created but could not be found in the database")
-			log.Println("[INFO] This should not be possible. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes with the error code: UNKNOWN-API-SIGNUP-POSTTAKEN")
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SIGNUP-POSTTAKEN"})
-			return
-		}
-
-		token, err := randomChars(512)
-		if err != nil {
-			log.Println("[ERROR] Unknown in /api/signup token randomChars():", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SIGNUP-SESSIONSALT"})
-			return
-		}
-		_, err = mem.Exec("INSERT INTO sessions (session, id, device) VALUES (?, ?, ?)", token, userid, c.Request.Header.Get("User-Agent"))
-		if err != nil {
-			log.Println("[ERROR] Unknown in /api/signup session Exec():", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SIGNUP-SESSIONINSERT"})
-			return
-		}
-
-		c.JSON(200, gin.H{"key": token})
-	})
-
-	router.POST("/api/login", func(c *gin.Context) {
-		var data map[string]interface{}
-		err := c.ShouldBindJSON(&data)
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		username, ok := data["username"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		password, ok := data["password"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		modern, ok := data["modern"].(bool)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		userid, taken, err := checkUsernameTaken(username)
-		if !taken {
-			c.JSON(401, gin.H{"error": "User does not exist"})
-			return
-		} else if err != nil {
-			log.Println("[ERROR] Unknown in /api/login checkUsernameTaken():", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LOGIN-USERTAKEN"})
-			return
-		}
-
-		var migrated int
-		err = conn.QueryRow("SELECT migrated FROM users WHERE id = ?", userid).Scan(&migrated)
-		if err != nil {
-			log.Println("[ERROR] Unknown in /api/login migrated QueryRow():", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LOGIN-MIGRATED"})
-			return
-		}
-
-		_, _, hashedPasswd, err := getUser(userid)
-		if err != nil {
-			log.Println("[ERROR] Unknown in /api/login getUser():", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LOGIN-GETUSER"})
-			return
-		}
-
-		correctPassword, err := verifyHash(hashedPasswd, password)
-		if err != nil {
-			if errors.Is(err, errors.New("invalid hash format")) {
-				c.JSON(422, gin.H{"error": "Invalid hash format"})
-				return
-			} else {
-				log.Println("[ERROR] Unknown in /api/login verifyHash():", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LOGIN-VERIFYHASH"})
-				return
-			}
-		} else if !correctPassword {
-			if migrated == 0 {
-				c.JSON(401, gin.H{"error": "User has not migrated", "migrated": false})
-				return
-			} else {
-				c.JSON(401, gin.H{"error": "Incorrect password", "migrated": true})
-				return
-			}
-		} else {
-			if modern && migrated == 0 {
-				_, err := conn.Exec("UPDATE users SET migrated = 1 WHERE id = ?", userid)
-				if err != nil {
-					log.Println("[ERROR] Unknown in /api/login modern Exec():", err)
-					c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LOGIN-MODERN"})
-					return
-				}
-			}
-		}
-
-		token, err := randomChars(512)
-		if err != nil {
-			log.Println("[ERROR] Unknown in /api/login token randomChars():", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LOGIN-SESSIONSALT"})
-			return
-		}
-
-		_, err = mem.Exec("INSERT INTO sessions (session, id, device) VALUES (?, ?, ?)", token, userid, c.Request.Header.Get("User-Agent"))
-		if err != nil {
-			log.Println("[ERROR] Unknown in /api/login session Exec():", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LOGIN-SESSIONINSERT"})
-			return
-		}
-
-		if migrated != 1 {
-			c.JSON(200, gin.H{"key": token, "migrated": false})
-		} else {
-			c.JSON(200, gin.H{"key": token, "migrated": true})
-		}
-	})
-
-	router.POST("/api/oauth/get", func(c *gin.Context) {
-		var data map[string]interface{}
-		err := c.ShouldBindJSON(&data)
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		username, ok := data["username"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		oauthProvider, ok := data["oauthProvider"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		_, userid, err := checkUsernameTaken(username)
-		if err != nil {
-			c.JSON(404, gin.H{"error": "Username not found"})
-			return
-		}
-
-		var encryptedPasswd string
-		err = conn.QueryRow("SELECT encryptedPasswd FROM oauth WHERE id = ? AND oauthProvider = ?", userid, oauthProvider).Scan(&encryptedPasswd)
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				c.JSON(404, gin.H{"error": "Entry not found"})
-			} else {
-				log.Println("[ERROR] Unknown in /api/oauth/get select:", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-OAUTH-GET-SELECT"})
-			}
-		}
-
-		c.JSON(200, gin.H{"password": encryptedPasswd})
-	})
-
-	router.POST("/api/oauth/add", func(c *gin.Context) {
-		var data map[string]interface{}
-		err := c.ShouldBindJSON(&data)
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		token, ok := data["secretKey"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		oauthProvider, ok := data["oauthProvider"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		encryptedPassword, ok := data["encryptedPassword"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-		}
-
-		_, userid, err := getSession(token)
-		if err != nil {
-			c.JSON(401, gin.H{"error": "Invalid session"})
-			return
-		}
-
-		_, err = conn.Exec("INSERT INTO oauth (id, oauthProvider, encryptedPasswd) VALUES (?, ?, ?)", userid, oauthProvider, encryptedPassword)
-		if err != nil {
-			if errors.Is(err, sqlite3.ErrConstraintUnique) {
-				c.JSON(409, gin.H{"error": "Entry already exists"})
-			} else {
-				log.Println("[ERROR] Unknown in /api/oauth/add Exec():", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-OAUTH-ADD-EXEC"})
-			}
-		}
-
-		c.JSON(200, gin.H{"success": true})
-	})
-
-	router.POST("/api/oauth/remove", func(c *gin.Context) {
-		var data map[string]interface{}
-		err := c.ShouldBindJSON(&data)
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		token, ok := data["secretKey"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		oauthProvider, ok := data["oauthProvider"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		_, userid, err := getSession(token)
-		if err != nil {
-			c.JSON(401, gin.H{"error": "Invalid session"})
-			return
-		}
-
-		_, err = conn.Exec("DELETE FROM oauth WHERE userid = ? AND oauthProvider = ?", userid, oauthProvider)
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				c.JSON(404, gin.H{"error": "Entry not found"})
-			} else {
-				log.Println("[ERROR] Unknown in /api/oauth/add Exec():", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-OAUTH-REMOVE-EXEC"})
-			}
-		}
-
-		c.JSON(200, gin.H{"success": true})
-	})
-
-	router.POST("/api/changepassword", func(c *gin.Context) {
-		var data map[string]interface{}
-		err := c.ShouldBindJSON(&data)
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		token, ok := data["secretKey"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		newPassword, ok := data["newPassword"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		migrate, ok := data["migration"].(bool)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		_, userid, err := getSession(token)
-		if err != nil {
-			c.JSON(401, gin.H{"error": "Invalid session"})
-			return
-		}
-
-		salt, err := randomChars(16)
-		if err != nil {
-			log.Println("[ERROR] Unknown in /api/changepassword randomChars():", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-CHANGEPASSWORD-SALT"})
-			return
-		}
-		hashedPassword, err := hash(newPassword, salt)
-		if err != nil {
-			log.Println("[ERROR] Unknown in /api/changepassword hash():", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-CHANGEPASSWORD-HASH"})
-			return
-		}
-
-		_, err = conn.Exec("UPDATE users SET password = ? WHERE id = ?", hashedPassword, userid)
-		if err != nil {
-			log.Println("[ERROR] Unknown in /api/changepassword Exec():", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-CHANGEPASSWORD-DBUPDATE"})
-			return
-		}
-
-		if migrate {
-			_, err = conn.Exec("UPDATE users SET migrated = 1 WHERE id = ?", userid)
-			if err != nil {
-				log.Println("[ERROR] Unknown in /api/changepassword migrate Exec():", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-CHANGEPASSWORD-MIGRATE"})
-				return
-			}
-		}
-
-		c.JSON(200, gin.H{"success": true})
-	})
-
-	router.POST("/api/userinfo", func(c *gin.Context) {
-		var data map[string]interface{}
-		err := c.ShouldBindJSON(&data)
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		token, ok := data["secretKey"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		_, userid, err := getSession(token)
-		if err != nil {
-			c.JSON(401, gin.H{"error": "Invalid session"})
-			return
-		}
-
-		created, username, _, err := getUser(userid)
-		if err != nil {
-			log.Println("[ERROR] Unknown in /api/userinfo getUser():", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-USERINFO-GETUSER"})
-			return
-		}
-
-		space, err := getSpace(userid)
-		if err != nil {
-			log.Println("[ERROR] Unknown in /api/userinfo getSpace():", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-USERINFO-GETSPACE"})
-			return
-		}
-
-		notecount, err := getNoteCount(userid)
-		if err != nil {
-			log.Println("[ERROR] Unknown in /api/userinfo getNoteCount():", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-USERINFO-GETNOTECOUNT"})
-			return
-		}
-		c.JSON(200, gin.H{"username": username, "id": userid, "created": created, "storageused": space, "storagemax": maxStorage, "notecount": notecount})
-	})
-
-	router.POST("/api/loggedin", func(c *gin.Context) {
-		var data map[string]interface{}
-		err := c.ShouldBindJSON(&data)
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		token, ok := data["secretKey"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		_, userid, err := getSession(token)
-		if err != nil {
-			c.JSON(401, gin.H{"error": "Invalid session"})
-			return
-		}
-		if userid > 0 {
-			c.JSON(200, gin.H{"loggedin": true})
-		} else {
-			c.JSON(403, gin.H{"loggedin": false})
-		}
-	})
-
-	router.POST("/api/listnotes", func(c *gin.Context) {
-		var data map[string]interface{}
-		err := c.ShouldBindJSON(&data)
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		token, ok := data["secretKey"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		_, userid, err := getSession(token)
-		if err != nil {
-			c.JSON(401, gin.H{"error": "Invalid session"})
-			return
-		}
-
-		rows, err := conn.Query("SELECT id, title FROM notes WHERE creator = ? ORDER BY id DESC", userid)
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				c.JSON(200, []map[string]interface{}{})
-				return
-			} else {
-				log.Println("[ERROR] Unknown in /api/listnotes query:", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LISTNOTES-DBQUERY"})
-				return
-			}
-		}
-		defer func(rows *sql.Rows) {
-			err := rows.Close()
-			if err != nil {
-				log.Println("[ERROR] Unknown in /api/listnotes row defer:", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LISTNOTES-ROWCLOSE"})
-				return
-			}
-		}(rows)
-
-		var notes []map[string]interface{}
-		for rows.Next() {
-			var id int
-			var title string
-			if err := rows.Scan(&id, &title); err != nil {
-				log.Println("[ERROR] Unknown in /api/listnotes row scan:", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LISTNOTES-ROWSCAN"})
-				return
-			}
-			notes = append(notes, map[string]interface{}{"id": id, "title": title})
-		}
-		if err := rows.Err(); err != nil {
-			log.Println("[ERROR] Unknown in /api/listnotes row iteration:", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LISTNOTES-ROWERR"})
-			return
-		}
-
-		c.JSON(200, notes)
-	})
-
-	router.POST("/api/exportnotes", func(c *gin.Context) {
-		var data map[string]interface{}
-		err := c.ShouldBindJSON(&data)
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		token, ok := data["secretKey"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		_, userid, err := getSession(token)
-		if err != nil {
-			c.JSON(401, gin.H{"error": "Invalid session"})
-			return
-		}
-
-		rows, err := conn.Query("SELECT id, created, edited, title, content FROM notes WHERE creator = ? ORDER BY edited DESC", userid)
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				c.JSON(200, []map[string]interface{}{})
-				return
-			} else {
-				log.Println("[ERROR] Unknown in /api/exportnotes query:", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-EXPORTNOTES-DBQUERY"})
-				return
-			}
-		}
-		defer func(rows *sql.Rows) {
-			err := rows.Close()
-			if err != nil {
-				log.Println("[ERROR] Unknown in /api/exportnotes row defer:", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-EXPORTNOTES-ROWCLOSE"})
-				return
-			}
-		}(rows)
-
-		var notes []map[string]interface{}
-		for rows.Next() {
-			var id int
-			var created, edited, title, content string
-			if err := rows.Scan(&id, &created, &edited, &title, &content); err != nil {
-				log.Println("[ERROR] Unknown in /api/exportnotes row scan:", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-EXPORTNOTES-ROWSCAN"})
-				return
-			}
-			notes = append(notes, map[string]interface{}{"id": id, "created": created, "edited": edited, "title": title, "content": content})
-		}
-		if err := rows.Err(); err != nil {
-			log.Println("[ERROR] Unknown in /api/exportnotes row iteration:", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-EXPORTNOTES-ROWERR"})
-			return
-		}
-
-		c.JSON(200, notes)
-	})
-
-	router.POST("/api/importnotes", func(c *gin.Context) {
-		var data map[string]interface{}
-		err := c.ShouldBindJSON(&data)
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		token, ok := data["secretKey"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		notesStr, ok := data["notes"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		_, userid, err := getSession(token)
-		if err != nil {
-			c.JSON(401, gin.H{"error": "Invalid session"})
-			return
-		}
-
-		var notes []interface{}
-		err = json.Unmarshal([]byte(notesStr), &notes)
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		for _, note := range notes {
-			note := note.(map[string]interface{})
-			_, err := conn.Exec("INSERT INTO notes (creator, created, edited, title, content) VALUES (?, ?, ?, ?, ?)", userid, note["created"], note["edited"], note["title"], note["content"])
-			if err != nil {
-				log.Println("[ERROR] Unknown in /api/importnotes Exec():", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-IMPORTNOTES-DBINSERT"})
-				return
-			}
-		}
-
-		c.JSON(200, gin.H{"success": true})
-	})
-
-	router.POST("/api/newnote", func(c *gin.Context) {
-		var data map[string]interface{}
-		err := c.ShouldBindJSON(&data)
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		token, ok := data["secretKey"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		noteName, ok := data["noteName"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		_, userid, err := getSession(token)
-		if err != nil {
-			c.JSON(401, gin.H{"error": "Invalid session"})
-			return
-		}
-
-		space, err := getSpace(userid)
-		if int64(len(noteName)+space) > maxStorage {
-			c.JSON(403, gin.H{"error": "Storage limit reached"})
-			return
-		} else {
-			_, err := conn.Exec("INSERT INTO notes (title, content, creator, created, edited) VALUES (?, ?, ?, ?, ?)", noteName, "", userid, strconv.FormatInt(time.Now().Unix(), 10), strconv.FormatInt(time.Now().Unix(), 10))
-			if err != nil {
-				log.Println("[ERROR] Unknown in /api/newnote Exec():", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-NEWNOTE-DBINSERT"})
-				return
-			} else {
-				c.JSON(200, gin.H{"success": true})
-			}
-		}
-	})
-
-	router.POST("/api/readnote", func(c *gin.Context) {
-		var data map[string]interface{}
-		err := c.ShouldBindJSON(&data)
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		token, ok := data["secretKey"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		noteIdFloat, ok := data["noteId"].(float64)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		noteId := int(noteIdFloat)
-
-		_, userid, err := getSession(token)
-		if err != nil {
-			c.JSON(401, gin.H{"error": "Invalid session"})
-			return
-		}
-
-		creator, _, _, content, _, err := getNote(noteId)
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				c.JSON(422, gin.H{"error": "Note not found"})
-				return
-			} else {
-				log.Println("[ERROR] Unknown in /api/readnote getNote():", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-READNOTE-GETNOTE"})
-				return
-			}
-		} else {
-			if creator != userid {
-				c.JSON(422, gin.H{"error": "Note does not belong to user"})
-				return
-			} else {
-				c.JSON(200, gin.H{"content": content})
-			}
-		}
-	})
-
-	router.POST("/api/purgenotes", func(c *gin.Context) {
-		var data map[string]interface{}
-		err := c.ShouldBindJSON(&data)
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		token, ok := data["secretKey"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		_, userid, err := getSession(token)
-		if err != nil {
-			c.JSON(401, gin.H{"error": "Invalid session"})
-			return
-		}
-
-		_, err = conn.Exec("DELETE FROM notes WHERE creator = ?", userid)
-		if err != nil {
-			log.Println("[ERROR] Unknown in /api/purgenotes Exec():", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-PURGENOTES-DBDELETE"})
-			return
-		} else {
-			c.JSON(200, gin.H{"success": true})
-		}
-	})
-
-	router.POST("/api/editnote", func(c *gin.Context) {
-		var data map[string]interface{}
-		err := c.ShouldBindJSON(&data)
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		token, ok := data["secretKey"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		noteIdFloat, ok := data["noteId"].(float64)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		noteId := int(noteIdFloat)
-		content, ok := data["content"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		title, ok := data["title"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		_, userid, err := getSession(token)
-		if err != nil {
-			c.JSON(401, gin.H{"error": "Invalid session"})
-			return
-		}
-
-		creator, _, _, _, _, err := getNote(noteId)
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				c.JSON(422, gin.H{"error": "Note not found"})
-				return
-			} else {
-				log.Println("[ERROR] Unknown in /api/editnote getNote():", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-EDITNOTE-GETNOTE"})
-				return
-			}
-		}
-
-		if creator != userid {
-			c.JSON(403, gin.H{"error": "Note does not belong to user"})
-			return
-		} else {
-			_, err := conn.Exec("UPDATE notes SET content = ?, title = ?, edited = ? WHERE id = ?", content, title, strconv.FormatInt(time.Now().Unix(), 10), noteId)
-			if err != nil {
-				log.Println("[ERROR] Unknown in /api/editnote Exec():", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-EDITNOTE-DBUPDATE"})
-				return
-			} else {
-				c.JSON(200, gin.H{"success": true})
-			}
-		}
-	})
-
-	router.POST("/api/removenote", func(c *gin.Context) {
-		var data map[string]interface{}
-		err := c.ShouldBindJSON(&data)
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		token, ok := data["secretKey"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		noteIdFloat, ok := data["noteId"].(float64)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		noteId := int(noteIdFloat)
-
-		_, userid, err := getSession(token)
-		if err != nil {
-			c.JSON(401, gin.H{"error": "Invalid session"})
-			return
-		}
-
-		creator, _, _, _, _, err := getNote(noteId)
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				c.JSON(422, gin.H{"error": "Note not found"})
-				return
-			} else {
-				log.Println("[ERROR] Unknown in /api/removenote getNote():", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-REMOVENOTE-GETNOTE"})
-				return
-			}
-		}
-
-		if creator != userid {
-			c.JSON(403, gin.H{"error": "Note does not belong to user"})
-			return
-		} else {
-			_, err := conn.Exec("DELETE FROM notes WHERE id = ?", noteId)
-			if err != nil {
-				log.Println("[ERROR] Unknown in /api/removenote Exec():", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-REMOVENOTE-DBDELETE"})
-				return
-			} else {
-				c.JSON(200, gin.H{"success": true})
-			}
-		}
-	})
-
-	router.POST("/api/deleteaccount", func(c *gin.Context) {
-		var data map[string]interface{}
-		err := c.ShouldBindJSON(&data)
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		token, ok := data["secretKey"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		_, userid, err := getSession(token)
-		if err != nil {
-			c.JSON(401, gin.H{"error": "Invalid session"})
-			return
-		}
-
-		_, err = conn.Exec("DELETE FROM notes WHERE creator = ?", userid)
-		if err != nil {
-			log.Println("[ERROR] Unknown in /api/deleteaccount notes Exec():", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-DELETEACCOUNT-NOTESDELETE"})
-			return
-		}
-
-		_, err = conn.Exec("DELETE FROM users WHERE id = ?", userid)
-		if err != nil {
-			log.Println("[ERROR] Unknown in /api/deleteaccount user Exec():", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-DELETEACCOUNT-USERDELETE"})
-			return
-		}
-
-		_, err = mem.Exec("DELETE FROM sessions WHERE id = ?", userid)
-		if err != nil {
-			log.Println("[ERROR] Unknown in /api/deleteaccount session Exec():", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-DELETEACCOUNT-SESSIONDELETE"})
-			return
-		}
-
-		c.JSON(200, gin.H{"success": true})
-	})
-
-	router.POST("/api/sessions/list", func(c *gin.Context) {
-		var data map[string]interface{}
-		err := c.ShouldBindJSON(&data)
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		token, ok := data["secretKey"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		_, userid, err := getSession(token)
-		if err != nil {
-			c.JSON(401, gin.H{"error": "Invalid session"})
-			return
-		}
-
-		rows, err := mem.Query("SELECT sessionid, session, device FROM sessions WHERE id = ? ORDER BY id DESC", userid)
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				c.JSON(200, []map[string]interface{}{})
-				return
-			} else {
-				log.Println("[ERROR] Unknown in /api/sessions/list query:", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SESSIONS-LIST-DBQUERY"})
-				return
-			}
-		}
-		defer func(rows *sql.Rows) {
-			err := rows.Close()
-			if err != nil {
-				log.Println("[ERROR] Unknown in /api/sessions/list row defer:", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SESSIONS-LIST-ROWCLOSE"})
-				return
-			}
-		}(rows)
-
-		var sessionList []map[string]interface{}
-		for rows.Next() {
-			var sessionid int
-			var session, device string
-			if err := rows.Scan(&sessionid, &session, &device); err != nil {
-				log.Println("[ERROR] Unknown in /api/sessions/list row scan:", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SESSIONS-LIST-ROWSCAN"})
-				return
-			}
-			if session == token {
-				sessionList = append(sessionList, map[string]interface{}{"id": sessionid, "thisSession": true, "device": device})
-			} else {
-				sessionList = append(sessionList, map[string]interface{}{"id": sessionid, "thisSession": false, "device": device})
-			}
-		}
-		if err := rows.Err(); err != nil {
-			log.Println("[ERROR] Unknown in /api/sessions/list row iteration:", err)
-			c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SESSIONS-LIST-ROWERR"})
-			return
-		}
-
-		c.JSON(200, sessionList)
-	})
-
-	router.POST("/api/sessions/remove", func(c *gin.Context) {
-		var data map[string]interface{}
-		err := c.ShouldBindJSON(&data)
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		token, ok := data["secretKey"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		sessionIdFloat, ok := data["sessionId"].(float64)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		sessionId := int(sessionIdFloat)
-
-		_, userid, err := getSession(token)
-		if err != nil {
-			c.JSON(401, gin.H{"error": "Invalid session"})
-			return
-		}
-
-		_, creator, err := getSessionFromId(sessionId)
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				c.JSON(422, gin.H{"error": "Target session not found"})
-				return
-			} else {
-				log.Println("[ERROR] Unknown in /api/sessions/remove getSession():", err)
-				c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SESSIONS-REMOVE-GETSESSION"})
-				return
-			}
-		} else {
-			if creator != userid {
-				c.JSON(403, gin.H{"error": "Session does not belong to user"})
-				return
-			} else {
-				_, err := mem.Exec("DELETE FROM sessions WHERE sessionid = ?", sessionId)
-				if err != nil {
-					log.Println("[ERROR] Unknown in /api/sessions/remove Exec():", err)
-					c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-SESSIONS-REMOVE-DBDELETE"})
-					return
-				} else {
-					c.JSON(200, gin.H{"success": true})
-				}
-			}
-		}
-	})
-
-	router.POST("/api/listusers", func(c *gin.Context) {
-		var data map[string]interface{}
-		err := c.ShouldBindJSON(&data)
-		if err != nil {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-
-		masterToken, ok := data["masterkey"].(string)
-		if !ok {
-			c.JSON(400, gin.H{"error": "Invalid JSON"})
-			return
-		}
-		if masterToken == secretKey {
-			rows, err := conn.Query("SELECT id, username, created FROM users ORDER BY id DESC")
-			if err != nil {
-				if errors.Is(err, sql.ErrNoRows) {
-					c.JSON(200, []map[string]interface{}{})
-					return
-				} else {
-					log.Println("[ERROR] Unknown in /api/listusers query:", err)
-					c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LISTUSERS-DBQUERY"})
-					return
-				}
-			}
-			defer func(rows *sql.Rows) {
-				err := rows.Close()
-				if err != nil {
-					log.Println("[ERROR] Unknown in /api/listusers row defer:", err)
-					c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LISTUSERS-ROWCLOSE"})
-					return
-				}
-			}(rows)
-
-			var users []map[string]interface{}
-			for rows.Next() {
-				var id int
-				var username, created string
-				if err := rows.Scan(&id, &username, &created); err != nil {
-					log.Println("[ERROR] Unknown in /api/listusers row scan:", err)
-					c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LISTUSERS-ROWSCAN"})
-					return
-				}
-				space, err := getSpace(id)
-				if err != nil {
-					log.Println("[ERROR] Unknown in /api/listusers getSpace():", err)
-					c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LISTUSERS-GETSPACE"})
-					return
-				}
-				notes, err := getNoteCount(id)
-				if err != nil {
-					log.Println("[ERROR] Unknown in /api/listusers getNoteCount():", err)
-					c.JSON(500, gin.H{"error": "Something went wrong on our end. Please report this bug at https://centrifuge.hectabit.org/hectabit/burgernotes and refer to the documentation for more info. Your error code is: UNKNOWN-API-LISTUSERS-GETNOTECOUNT"})
-					return
-				}
-				users = append(users, map[string]interface{}{"id": id, "username": username, "created": created, "space": space, "notes": notes})
-			}
-			if err := rows.Err(); err != nil {
-				log.Println("[ERROR] Unknown in /api/listusers row iteration:", err)
-			}
-		}
-	})
-
+	// 3 second timeout
+	timeoutChan := make(chan struct{})
 	go func() {
-		for {
-			time.Sleep(time.Minute)
-			affected, err := mem.Exec("DELETE FROM spent WHERE expires < ?", time.Now().Unix())
+		time.Sleep(3 * time.Second)
+		logFunc("Timeout while waiting for the quota from the blob storage service", 2, information)
+		close(timeoutChan)
+	}()
+
+	// Wait for the response
+	select {
+	case response := <-information.Inbox:
+		return response, nil
+	case <-timeoutChan:
+		return library.InterServiceMessage{}, errors.New("timeout")
+	}
+}
+
+func getQuotaOrUsed(userID uuid.UUID, information library.ServiceInitializationInformation, context uint64) (int64, error) {
+	response, err := askBlobService(userID, information, context)
+	if err != nil {
+		return 0, err
+	} else if response.MessageType != 0 {
+		return 0, response.Message.(error)
+	} else {
+		return response.Message.(int64), nil
+	}
+}
+
+func getQuota(userID uuid.UUID, information library.ServiceInitializationInformation) (int64, error) {
+	return getQuotaOrUsed(userID, information, 3)
+}
+
+func getUsed(userID uuid.UUID, information library.ServiceInitializationInformation) (int64, error) {
+	return getQuotaOrUsed(userID, information, 4)
+}
+
+func deleteNote(userID uuid.UUID, noteID uuid.UUID, information library.ServiceInitializationInformation) error {
+	response, err := askBlobService(nucleusLibrary.File{
+		User: userID,
+		Name: noteID.String(),
+	}, information, 2)
+	if err != nil {
+		return err
+	}
+
+	if response.MessageType != 0 {
+		return response.Message.(error)
+	} else {
+		return nil
+	}
+}
+
+func modifyNote(userID uuid.UUID, noteID uuid.UUID, data []byte, information library.ServiceInitializationInformation) error {
+	response, err := askBlobService(nucleusLibrary.File{
+		User:  userID,
+		Name:  noteID.String(),
+		Bytes: data,
+	}, information, 0)
+	if err != nil {
+		return err
+	}
+
+	if response.MessageType != 0 {
+		return response.Message.(error)
+	} else {
+		return nil
+	}
+}
+
+func getNote(userID uuid.UUID, noteID uuid.UUID, information library.ServiceInitializationInformation) (*os.File, error) {
+	response, err := askBlobService(nucleusLibrary.File{
+		User: userID,
+		Name: noteID.String(),
+	}, information, 1)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.MessageType != 0 {
+		return nil, response.Message.(error)
+	} else {
+		return response.Message.(*os.File), nil
+	}
+}
+
+func renderProtobuf(statusCode int, w http.ResponseWriter, protobuf proto.Message, information library.ServiceInitializationInformation) {
+	w.WriteHeader(statusCode)
+	data, err := proto.Marshal(protobuf)
+	if err != nil {
+		logFunc(err.Error(), 2, information)
+	}
+	w.Header().Add("Content-Type", "application/x-protobuf")
+	_, err = w.Write(data)
+	if err != nil {
+		logFunc(err.Error(), 2, information)
+	}
+}
+
+func verifyJWT(token string, publicKey ed25519.PublicKey) (jwt.MapClaims, error) {
+	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+		return publicKey, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if !parsedToken.Valid {
+		return nil, errors.New("invalid token")
+	}
+
+	claims, ok := parsedToken.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, errors.New("invalid token")
+	}
+
+	// Check if the token expired
+	date, err := claims.GetExpirationTime()
+	if err != nil || date.Before(time.Now()) || claims["sub"] == nil || claims["isOpenID"] == nil || claims["isOpenID"].(bool) {
+		return claims, errors.New("invalid token")
+	}
+
+	return claims, nil
+}
+
+func getUsername(token string, oauthHostName string, publicKey ed25519.PublicKey) (string, string, error) {
+	// Verify the JWT
+	_, err := verifyJWT(token, publicKey)
+	if err != nil {
+		return "", "", err
+	}
+
+	// Get the user's information
+	var responseData struct {
+		Username string `json:"username"`
+		Sub      string `json:"sub"`
+	}
+	request, err := http.NewRequest("GET", oauthHostName+"/api/oauth/userinfo", nil)
+	request.Header.Set("Authorization", "Bearer "+token)
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return "", "", err
+	}
+
+	if response.StatusCode != 200 || response.Body == nil || response.Body == http.NoBody {
+		return "", "", errors.New("invalid response")
+	}
+
+	err = json.NewDecoder(response.Body).Decode(&responseData)
+	if err != nil {
+		return "", "", err
+	}
+
+	return responseData.Sub, responseData.Username, nil
+}
+
+func Main(information library.ServiceInitializationInformation) *chi.Mux {
+	var conn library.Database
+	hostName := information.Configuration["hostName"].(string)
+
+	// Initiate a connection to the database
+	// Call service ID 1 to get the database connection information
+	information.Outbox <- library.InterServiceMessage{
+		ServiceID:    ServiceInformation.ServiceID,
+		ForServiceID: uuid.MustParse("00000000-0000-0000-0000-000000000001"), // Service initialization service
+		MessageType:  1,                                                      // Request connection information
+		SentAt:       time.Now(),
+		Message:      nil,
+	}
+
+	// Wait for the response
+	response := <-information.Inbox
+	if response.MessageType == 2 {
+		// This is the connection information
+		// Set up the database connection
+		conn = response.Message.(library.Database)
+		if conn.DBType == library.Sqlite {
+			// Create the users table
+			_, err := conn.DB.Exec("CREATE TABLE IF NOT EXISTS users (id BLOB NOT NULL UNIQUE, publicKey BLOB NOT NULL, USERNAME TEXT NOT NULL)")
 			if err != nil {
-				log.Println("[ERROR] Unknown in spent cleanup Exec():", err)
-			} else {
-				affectedRows, err := affected.RowsAffected()
-				if err != nil {
-					log.Println("[ERROR] Unknown in spent cleanup RowsAffected():", err)
-				} else {
-					log.Println("[INFO] Spent cleanup complete, deleted " + strconv.FormatInt(affectedRows, 10) + " rows")
-				}
+				logFunc(err.Error(), 3, information)
 			}
+			// Create the notes table
+			_, err = conn.DB.Exec("CREATE TABLE IF NOT EXISTS notes (id BLOB NOT NULL UNIQUE, userID BLOB NOT NULL, title BLOB NOT NULL, titleIV BLOB NOT NULL)")
+			if err != nil {
+				logFunc(err.Error(), 3, information)
+			}
+		} else {
+			// Create the users table
+			_, err := conn.DB.Exec("CREATE TABLE IF NOT EXISTS users (id BYTEA NOT NULL UNIQUE, publicKey BYTEA NOT NULL, USERNAME TEXT NOT NULL)")
+			if err != nil {
+				logFunc(err.Error(), 3, information)
+			}
+			// Create the notes table
+			_, err = conn.DB.Exec("CREATE TABLE IF NOT EXISTS notes (id BYTEA NOT NULL UNIQUE, userID BYTEA NOT NULL, title BYTEA NOT NULL, titleIV BYTEA NOT NULL)")
+			if err != nil {
+				logFunc(err.Error(), 3, information)
+			}
+		}
+	} else {
+		// This is an error message
+		// Log the error message to the logger service
+		logFunc(response.Message.(error).Error(), 3, information)
+	}
+
+	// Ask the authentication service for the public key
+	information.Outbox <- library.InterServiceMessage{
+		ServiceID:    ServiceInformation.ServiceID,
+		ForServiceID: uuid.MustParse("00000000-0000-0000-0000-000000000004"), // Authentication service
+		MessageType:  2,                                                      // Request public key
+		SentAt:       time.Now(),
+		Message:      nil,
+	}
+
+	var publicKey ed25519.PublicKey = nil
+
+	// 3 second timeout
+	go func() {
+		time.Sleep(3 * time.Second)
+		if publicKey == nil {
+			logFunc("Timeout while waiting for the public key from the authentication service", 3, information)
 		}
 	}()
 
-	log.Println("[INFO] Server started")
-	log.Println("[INFO] Welcome to Burgernotes! Today we are running on IP " + host + " on port " + strconv.Itoa(port) + ".")
-	err = router.Run(host + ":" + strconv.Itoa(port))
-	if err != nil {
-		log.Fatalln("[FATAL] Server failed to begin operations")
+	// Wait for the response
+	response = <-information.Inbox
+	if response.MessageType == 2 {
+		// This is the public key
+		publicKey = response.Message.(ed25519.PublicKey)
+	} else {
+		// This is an error message
+		// Log the error message to the logger service
+		logFunc(response.Message.(error).Error(), 3, information)
 	}
+
+	// Ask the authentication service for the OAuth host name
+	information.Outbox <- library.InterServiceMessage{
+		ServiceID:    ServiceInformation.ServiceID,
+		ForServiceID: uuid.MustParse("00000000-0000-0000-0000-000000000004"), // Authentication service
+		MessageType:  0,                                                      // Request OAuth host name
+		SentAt:       time.Now(),
+		Message:      nil,
+	}
+
+	var oauthHostName string
+
+	// 3 second timeout
+	go func() {
+		time.Sleep(3 * time.Second)
+		if oauthHostName == "" {
+			logFunc("Timeout while waiting for the OAuth host name from the authentication service", 3, information)
+		}
+	}()
+
+	// Wait for the response
+	response = <-information.Inbox
+	if response.MessageType == 0 {
+		// This is the OAuth host name
+		oauthHostName = response.Message.(string)
+	} else {
+		// This is an error message
+		// Log the error message to the logger service
+		logFunc(response.Message.(error).Error(), 3, information)
+	}
+
+	// Ask the authentication service to create a new OAuth2 client
+	urlPath, err := url.JoinPath(hostName, "/oauth")
+	if err != nil {
+		logFunc(err.Error(), 3, information)
+	}
+
+	information.Outbox <- library.InterServiceMessage{
+		ServiceID:    ServiceInformation.ServiceID,
+		ForServiceID: uuid.MustParse("00000000-0000-0000-0000-000000000004"), // Authentication service
+		MessageType:  1,                                                      // Create OAuth2 client
+		SentAt:       time.Now(),
+		Message: nucleusLibrary.OAuthInformation{
+			Name:        "Data Tracker",
+			RedirectUri: urlPath,
+			KeyShareUri: "",
+			Scopes:      []string{"openid"},
+		},
+	}
+
+	oauthResponse := nucleusLibrary.OAuthResponse{}
+
+	// 3 second timeout
+	go func() {
+		time.Sleep(3 * time.Second)
+		if oauthResponse == (nucleusLibrary.OAuthResponse{}) {
+			logFunc("Timeout while waiting for the OAuth response from the authentication service", 3, information)
+		}
+	}()
+
+	// Wait for the response
+	response = <-information.Inbox
+	switch response.MessageType {
+	case 0:
+		// Success, set the OAuth response
+		oauthResponse = response.Message.(nucleusLibrary.OAuthResponse)
+		logFunc("Initialized with App ID: "+oauthResponse.AppID, 0, information)
+	case 1:
+		// An error which is their fault
+		logFunc(response.Message.(error).Error(), 3, information)
+	case 2:
+		// An error which is our fault
+		logFunc(response.Message.(error).Error(), 3, information)
+	default:
+		// An unknown error
+		logFunc("Unknown error", 3, information)
+	}
+
+	// Set up the router
+	router := chi.NewRouter()
+
+	// Set up the static routes
+	staticDir, err := fs.Sub(information.ResourceDir, "static")
+	if err != nil {
+		logFunc(err.Error(), 3, information)
+	} else {
+		router.Handle("/bgn-static/*", http.StripPrefix("/bgn-static/", http.FileServerFS(staticDir)))
+	}
+
+	// Set up the routes
+	router.Post("/api/notes/add", func(w http.ResponseWriter, r *http.Request) {
+		var requestData protobuf.Token
+		err := unmarshalProtobuf(r, &requestData)
+
+		// Verify the JWT
+		claims, err := verifyJWT(requestData.Token, publicKey)
+		if err != nil {
+			renderProtobuf(403, w, &protobuf.Error{Error: "Invalid token"}, information)
+			return
+		}
+
+		// Generate a new note UUID
+		noteID := uuid.New()
+
+		// Check if the user has reached their quota
+		quota, err := getQuota(uuid.MustParse(claims["sub"].(string)), information)
+		if err != nil {
+			renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x02}}, information)
+			return
+		}
+
+		used, err := getUsed(uuid.MustParse(claims["sub"].(string)), information)
+		if err != nil {
+			renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x03}}, information)
+			return
+		}
+
+		if used >= quota {
+			renderProtobuf(403, w, &protobuf.Error{Error: "Quota reached"}, information)
+			return
+		}
+
+		// Try to insert the note into the database
+		_, err = conn.DB.Exec("INSERT INTO notes (id, userID) VALUES ($1, $2)", noteID, claims["sub"])
+		if err != nil {
+			renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x04}}, information)
+		} else {
+			noteIdBytes, err := noteID.MarshalBinary()
+			if err != nil {
+				renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x05}}, information)
+			}
+			renderProtobuf(200, w, &protobuf.NoteID{NoteId: noteIdBytes}, information)
+		}
+	})
+
+	router.Post("/api/notes/remove", func(w http.ResponseWriter, r *http.Request) {
+		var requestData protobuf.NoteRequest
+		err := unmarshalProtobuf(r, &requestData)
+		if err != nil {
+			renderProtobuf(400, w, &protobuf.Error{Error: "Invalid request"}, information)
+			return
+		}
+
+		// Verify the JWT
+		claims, err := verifyJWT(requestData.Token.String(), publicKey)
+		if err != nil {
+			renderProtobuf(403, w, &protobuf.Error{Error: "Invalid token"}, information)
+			return
+		}
+
+		// Try to remove the note from the database
+		_, err = conn.DB.Exec("DELETE FROM notes WHERE id = $1 AND userID = $2", requestData.NoteId, claims["sub"])
+		if err != nil {
+			renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x06}}, information)
+		}
+
+		// If it's there, try to remove the note from the blob storage
+		err = deleteNote(uuid.MustParse(claims["sub"].(string)), uuid.Must(uuid.FromBytes(requestData.NoteId.GetNoteId())), information)
+		if err != nil {
+			renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x07}}, information)
+		}
+
+		w.WriteHeader(200)
+	})
+
+	router.Post("/api/notes/list", func(w http.ResponseWriter, r *http.Request) {
+		// Verify the JWT
+		var requestData protobuf.Token
+		err := unmarshalProtobuf(r, &requestData)
+		if err != nil {
+			renderProtobuf(400, w, &protobuf.Error{Error: "Invalid request"}, information)
+			return
+		}
+
+		claims, err := verifyJWT(requestData.Token, publicKey)
+		if err != nil {
+			renderProtobuf(403, w, &protobuf.Error{Error: "Invalid token"}, information)
+			return
+		}
+
+		// Try to get the notes from the database
+		rows, err := conn.DB.Query("SELECT id, title, titleIV FROM notes WHERE userID = $1", claims["sub"])
+		if err != nil {
+			renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x08}}, information)
+			return
+		}
+
+		// Create the notes list
+		var notes protobuf.ApiNotesListResponse
+
+		// Iterate through the rows
+		for rows.Next() {
+			var title, titleIV, noteID []byte
+			err = rows.Scan(&noteID, &title, &titleIV)
+			if err != nil {
+				renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x09}}, information)
+				return
+			}
+
+			// Append the note to the list
+			notes.Notes = append(notes.Notes, &protobuf.NoteMetadata{
+				NoteId: &protobuf.NoteID{
+					NoteId: noteID,
+				},
+				Title: &protobuf.AESData{
+					Data: title,
+					Iv:   titleIV,
+				},
+			})
+		}
+
+		// Render the notes list
+		renderProtobuf(200, w, &notes, information)
+	})
+
+	router.Post("/api/notes/get", func(w http.ResponseWriter, r *http.Request) {
+		var requestData protobuf.NoteRequest
+		err := unmarshalProtobuf(r, &requestData)
+		if err != nil {
+			renderProtobuf(400, w, &protobuf.Error{Error: "Invalid request"}, information)
+			return
+		}
+
+		// Verify the JWT
+		claims, err := verifyJWT(requestData.Token.String(), publicKey)
+		if err != nil {
+			renderProtobuf(403, w, &protobuf.Error{Error: "Invalid token"}, information)
+			return
+		}
+
+		// Try to get the note from the database
+		var title, titleIV []byte
+		err = conn.DB.QueryRow("SELECT title, titleIV FROM notes WHERE id = $1 AND userID = $2", requestData.NoteId, claims["sub"]).Scan(&title, &titleIV)
+		if err != nil {
+			renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x0A}}, information)
+			return
+		}
+
+		// Get the note from the blob storage
+		noteFile, err := getNote(uuid.MustParse(claims["sub"].(string)), uuid.Must(uuid.FromBytes(requestData.NoteId.GetNoteId())), information)
+		if err != nil {
+			renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x0B}}, information)
+			return
+		}
+
+		// The IV is the first 16 bytes of the file
+		iv := make([]byte, 16)
+		_, err = noteFile.Read(iv)
+		if err != nil {
+			renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x0C}}, information)
+			return
+		}
+
+		// The rest of the file is the data
+		data, err := io.ReadAll(noteFile)
+		if err != nil {
+			renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x0D}}, information)
+			return
+		}
+
+		// Close the file
+		err = noteFile.Close()
+		if err != nil {
+			logFunc("Resource leak in /api/notes/get", 2, information)
+		}
+
+		// Render the note
+		renderProtobuf(200, w, &protobuf.Note{
+			Note: &protobuf.AESData{
+				Data: data,
+				Iv:   iv,
+			},
+			Metadata: &protobuf.NoteMetadata{
+				NoteId: requestData.NoteId,
+				Title: &protobuf.AESData{
+					Data: title,
+					Iv:   titleIV,
+				},
+			},
+		}, information)
+	})
+
+	router.Post("/api/notes/edit", func(w http.ResponseWriter, r *http.Request) {
+		var requestData protobuf.ApiNotesEditRequest
+		err := unmarshalProtobuf(r, &requestData)
+		if err != nil {
+			renderProtobuf(400, w, &protobuf.Error{Error: "Invalid request"}, information)
+			return
+		}
+
+		// Verify the JWT
+		claims, err := verifyJWT(requestData.Token.String(), publicKey)
+		if err != nil {
+			renderProtobuf(403, w, &protobuf.Error{Error: "Invalid token"}, information)
+			return
+		}
+
+		// Update the title
+		_, err = conn.DB.Exec("UPDATE notes SET title = $1, titleIV = $2 WHERE id = $3 AND userID = $4", requestData.Note.Metadata.Title.Data, requestData.Note.Metadata.Title.Iv, requestData.Note.Metadata.NoteId, claims["sub"])
+		if err != nil {
+			renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x0E}}, information)
+			return
+		}
+
+		// Edit the note in the blob storage
+		err = modifyNote(uuid.MustParse(claims["sub"].(string)), uuid.Must(uuid.FromBytes(requestData.Note.Metadata.NoteId.GetNoteId())), bytes.Join([][]byte{requestData.Note.Note.Iv, requestData.Note.Note.Data}, nil), information)
+		if err != nil {
+			renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x0F}}, information)
+			return
+		}
+
+		w.WriteHeader(200)
+	})
+
+	router.Post("/api/notes/purge", func(w http.ResponseWriter, r *http.Request) {
+		var requestData protobuf.Token
+		err := unmarshalProtobuf(r, &requestData)
+		if err != nil {
+			renderProtobuf(400, w, &protobuf.Error{Error: "Invalid request"}, information)
+			return
+		}
+
+		// Verify the JWT
+		claims, err := verifyJWT(requestData.Token, publicKey)
+		if err != nil {
+			renderProtobuf(403, w, &protobuf.Error{Error: "Invalid token"}, information)
+			return
+		}
+
+		// Get the notes from the database
+		rows, err := conn.DB.Query("SELECT id FROM notes WHERE userID = $1", claims["sub"])
+		if err != nil {
+			renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x10}}, information)
+			return
+		}
+
+		// Iterate through the rows
+		for rows.Next() {
+			var noteID []byte
+			err = rows.Scan(&noteID)
+			if err != nil {
+				renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x11}}, information)
+				return
+			}
+
+			// Try to remove the note from the blob storage
+			err = deleteNote(uuid.MustParse(claims["sub"].(string)), uuid.Must(uuid.FromBytes(noteID)), information)
+			if err != nil {
+				renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x12}}, information)
+				return
+			}
+		}
+
+		// Remove the notes from the database
+		_, err = conn.DB.Exec("DELETE FROM notes WHERE userID = $1", claims["sub"])
+		if err != nil {
+			renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x13}}, information)
+			return
+		}
+	})
+
+	router.Post("/api/signup", func(w http.ResponseWriter, r *http.Request) {
+		var requestData protobuf.ApiSignupRequest
+		err := unmarshalProtobuf(r, &requestData)
+		if err != nil {
+			renderProtobuf(400, w, &protobuf.Error{Error: "Invalid request"}, information)
+			return
+		}
+
+		// Verify the JWT
+		sub, username, err := getUsername(requestData.Token.String(), oauthHostName, publicKey)
+		if err != nil {
+			renderProtobuf(403, w, &protobuf.Error{Error: "Invalid token"}, information)
+			return
+		}
+
+		// Try to insert the user into the database
+		_, err = conn.DB.Exec("INSERT INTO users (id, publicKey, username) VALUES ($1, $2, $3)", sub, requestData.PublicKey, username)
+		if err != nil {
+			if strings.Contains(err.Error(), "UNIQUE") {
+				renderProtobuf(409, w, &protobuf.Error{Error: "User already exists"}, information)
+			} else {
+				renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x01}}, information)
+			}
+			return
+		}
+
+		w.WriteHeader(200)
+	})
+
+	router.Post("/api/delete", func(w http.ResponseWriter, r *http.Request) {
+		var requestData protobuf.Token
+		err := unmarshalProtobuf(r, &requestData)
+		if err != nil {
+			renderProtobuf(400, w, &protobuf.Error{Error: "Invalid request"}, information)
+			return
+		}
+
+		// Verify the JWT
+		claims, err := verifyJWT(requestData.Token, publicKey)
+		if err != nil {
+			renderProtobuf(403, w, &protobuf.Error{Error: "Invalid token"}, information)
+			return
+		}
+
+		// Try to remove the user from the database
+		_, err = conn.DB.Exec("DELETE FROM users WHERE id = $1", claims["sub"])
+		if err != nil {
+			renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x14}}, information)
+			return
+		}
+
+		// Get the notes from the database
+		rows, err := conn.DB.Query("SELECT id FROM notes WHERE userID = $1", claims["sub"])
+		if err != nil {
+			renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x15}}, information)
+			return
+		}
+
+		// Iterate through the rows
+		for rows.Next() {
+			var noteID []byte
+			err = rows.Scan(&noteID)
+			if err != nil {
+				renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x16}}, information)
+				return
+			}
+
+			// Try to remove the note from the blob storage
+			err = deleteNote(uuid.MustParse(claims["sub"].(string)), uuid.Must(uuid.FromBytes(noteID)), information)
+			if err != nil {
+				renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x17}}, information)
+				return
+			}
+		}
+
+		// Remove the notes from the database
+		_, err = conn.DB.Exec("DELETE FROM notes WHERE userID = $1", claims["sub"])
+		if err != nil {
+			renderProtobuf(500, w, &protobuf.ServerError{ErrorCode: []byte{0x18}}, information)
+			return
+		}
+
+		w.WriteHeader(200)
+	})
+
+	// TODO: Implement shared notes
+
+	return router
 }
