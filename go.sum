@@ -1,5 +1,7 @@
 git.ailur.dev/ailur/fg-library/v2 v2.0.1 h1:ltPYXf/Om0hnMD8gr1K5bkYrfHqKPSbb0hxa0wtTnZ0=
 git.ailur.dev/ailur/fg-library/v2 v2.0.1/go.mod h1:1jYbWhabGcIwp7CkhHqvRwC8eP+nHv5BrXPe9NX2HE8=
+git.ailur.dev/ailur/fg-library/v2 v2.1.0 h1:SsLZ56poM6GZPfV/ywU/8WDTelu2dtlPp6jzbEZ4hrA=
+git.ailur.dev/ailur/fg-library/v2 v2.1.0/go.mod h1:1jYbWhabGcIwp7CkhHqvRwC8eP+nHv5BrXPe9NX2HE8=
 git.ailur.dev/ailur/fg-nucleus-library v1.0.2 h1:EWfeab+wJKaxx/Qg5TKpvZHicA0V/NilUv2g6W97rtg=
 git.ailur.dev/ailur/fg-nucleus-library v1.0.2/go.mod h1:T2mdUiXlZqb917CkNB2vwujkD/QhJDpCHLRvKuskBpY=
 github.com/go-chi/chi/v5 v5.1.0 h1:acVI1TYaD+hhedDJ3r54HyA6sExp3HfXq7QWEEY/xMw=
